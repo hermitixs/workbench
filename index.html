@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>工作台</title>
+<meta name="description" content="个人生活管理与内容策略工作台">
+<meta name="theme-color" content="#EDEAE6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="工作台">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<style>
+:root{--bg:#EDEAE6;--card:#F7F5F2;--card-alt:#F0ECE6;--primary:#9B8B7E;--primary-l:#B8A99A;--accent-w:#C4A882;--accent-bl:#8FA3B0;--accent-gr:#8BA88E;--accent-ro:#C49494;--text:#5C524A;--text-s:#918780;--text-p:#3A332D;--white:#FFFDF9;--shadow:0 2px 12px rgba(92,82,74,.08);--radius:16px;--r-sm:10px;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button{border:none;background:none;cursor:pointer;font:inherit;color:inherit}
+input,textarea,select{font:inherit;color:inherit}
+.app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;background:var(--bg)}
+.header{padding:calc(12px+var(--safe-t)) 20px 12px;background:var(--bg);flex-shrink:0}
+.header h1{font-size:22px;font-weight:700;color:var(--text-p)}
+.header .date{font-size:12px;color:var(--text-s);margin-top:2px}
+.main{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:0 16px calc(16px+var(--safe-b));opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .28s ease,transform .28s ease;-webkit-overflow-scrolling:touch}
+.page.active{opacity:1;pointer-events:auto;transform:translateY(0)}
+.tab-bar{display:flex;flex-shrink:0;background:var(--card);padding-bottom:var(--safe-b);border-top:1px solid rgba(155,139,126,.12);position:relative;z-index:100}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 0 calc(4px+var(--safe-b)/2);color:var(--text-s);transition:color .2s}
+.tab-btn .icon{font-size:22px;line-height:1}
+.tab-btn span{font-size:10px;font-weight:500;letter-spacing:.3px}
+.tab-btn.active{color:var(--primary)}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:13px;font-weight:600;color:var(--text-s);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px}
+.card-stat{display:flex;align-items:baseline;gap:6px}
+.card-stat .num{font-size:32px;font-weight:700;color:var(--text-p)}
+.card-stat .unit{font-size:13px;color:var(--text-s)}
+.sub-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.sub-tabs::-webkit-scrollbar{display:none}
+.sub-tab{flex-shrink:0;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--card-alt);color:var(--text-s);transition:all .2s}
+.sub-tab.active{background:var(--primary);color:#fff}
+.sub-panel{display:none}
+.sub-panel.active{display:block}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transition:opacity .15s}
+.btn:active{opacity:.75}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-accent{background:var(--accent-w);color:#fff}
+.btn-blue{background:var(--accent-bl);color:#fff}
+.btn-green{background:var(--accent-gr);color:#fff}
+.btn-rose{background:var(--accent-ro);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--primary-l);color:var(--primary)}
+.btn-block{width:100%}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;padding:10px 12px;border-radius:var(--r-sm);border:1.5px solid rgba(155,139,126,.25);background:var(--white);outline:none;transition:border-color .2s}
+.field input:focus,.field textarea:focus{border-color:var(--primary)}
+.task-list{list-style:none}
+.task-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(155,139,126,.1)}
+.task-item:last-child{border-bottom:none}
+.task-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--primary-l);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer}
+.task-check.done{background:var(--accent-gr);border-color:var(--accent-gr)}
+.task-check.done::after{content:"✓";color:#fff;font-size:12px;font-weight:700}
+.task-text{flex:1;font-size:14px}
+.task-text.done{text-decoration:line-through;color:var(--text-s)}
+.task-del{color:var(--text-s);font-size:18px;padding:4px}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-header h3{font-size:15px;font-weight:600;color:var(--text-p)}
+.cal-nav{background:none;border:none;font-size:18px;color:var(--primary);padding:4px 8px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-day-name{font-size:11px;color:var(--text-s);font-weight:600;padding:6px 0}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:var(--r-sm);font-size:13px;cursor:pointer;transition:all .15s;position:relative;color:var(--text)}
+.cal-day:hover{background:var(--card-alt)}
+.cal-day.today{background:var(--primary);color:#fff;font-weight:700}
+.cal-day.has-data::after{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent-w);position:absolute;bottom:4px}
+.cal-day.today.has-data::after{background:#fff}
+.cal-day.other-month{color:var(--text-s);opacity:.4}
+.expense-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(155,139,126,.1)}
+.expense-item:last-child{border-bottom:none}
+.expense-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.expense-info{flex:1}
+.expense-info .name{font-size:13px;font-weight:500;color:var(--text-p)}
+.expense-info .cat{font-size:11px;color:var(--text-s)}
+.expense-amt{font-size:14px;font-weight:600;color:var(--text-p)}
+.exercise-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.exercise-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border-radius:var(--radius);background:var(--card-alt);cursor:pointer;transition:all .2s;border:2px solid transparent}
+.exercise-card:active,.exercise-card.selected{border-color:var(--primary);background:rgba(155,139,126,.1)}
+.exercise-card .ex-icon{font-size:28px;line-height:1}
+.exercise-card .ex-name{font-size:11px;font-weight:500;color:var(--text);text-align:center}
+.exercise-log{margin-top:10px}
+.exercise-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(155,139,126,.1)}
+.exercise-item:last-child{border-bottom:none}
+.exercise-item .ex-icon{font-size:20px}
+.exercise-item .ex-info{flex:1;font-size:13px}
+.exercise-item .ex-amt{font-size:13px;font-weight:600;color:var(--accent-gr)}
+.content-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.content-card .tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:8px}
+.tag-douyin{background:rgba(196,168,130,.2);color:var(--accent-w)}
+.tag-xhs{background:rgba(196,148,148,.2);color:var(--accent-ro)}
+.tag-lipline{background:rgba(143,168,142,.2);color:var(--accent-gr)}
+.content-card h4{font-size:14px;font-weight:600;color:var(--text-p);margin-bottom:6px}
+.content-card p{font-size:12px;color:var(--text-s);line-height:1.6;margin-bottom:10px}
+.content-card .analysis{background:var(--card-alt);border-radius:var(--r-sm);padding:10px;font-size:12px;color:var(--text);line-height:1.7}
+.content-card .analysis strong{color:var(--text-p)}
+.content-card .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.jump-link{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+.jump-link:active{opacity:.7}
+.jump-douyin{background:rgba(255,50,80,.12);color:#FF3250}
+.jump-xhs{background:rgba(255,60,60,.12);color:#FF3232}
+.skill-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--card);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.skill-card:active{transform:scale(.98)}
+.skill-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.skill-info{flex:1}
+.skill-info h4{font-size:14px;font-weight:600;color:var(--text-p)}
+.skill-info p{font-size:12px;color:var(--text-s);margin-top:2px}
+.skill-progress{font-size:12px;font-weight:600;color:var(--primary)}
+.progress-bar{height:4px;border-radius:2px;background:var(--card-alt);margin-top:6px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:2px;transition:width .4s}
+.book-item{display:flex;gap:12px;padding:12px;background:var(--card);border-radius:var(--r-sm);margin-bottom:8px;box-shadow:var(--shadow)}
+.book-cover{width:48px;height:64px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+.book-info{flex:1}
+.book-info h4{font-size:13px;font-weight:600;color:var(--text-p)}
+.book-info p{font-size:11px;color:var(--text-s);margin-top:2px}
+.book-info .book-status{font-size:11px;font-weight:500;margin-top:4px}
+.modal-overlay{position:fixed;inset:0;background:rgba(58,51,45,.4);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:20px;padding-bottom:calc(20px+var(--safe-b));animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;border-radius:2px;background:var(--primary-l);margin:0 auto 16px}
+.modal h3{font-size:17px;font-weight:700;color:var(--text-p);margin-bottom:16px}
+.empty-state{text-align:center;padding:30px 20px;color:var(--text-s)}
+.empty-state .emoji{font-size:40px;margin-bottom:10px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(155,139,126,.15);color:var(--primary)}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mb-12{margin-bottom:12px}
+.divider{height:1px;background:rgba(155,139,126,.12);margin:12px 0}
+.accent-warm{background:linear-gradient(135deg,var(--accent-w),#d4bc96)}
+.accent-blue{background:linear-gradient(135deg,var(--accent-bl),#a8c0cc)}
+.accent-green{background:linear-gradient(135deg,var(--accent-gr),#a8c4ab)}
+.accent-rose{background:linear-gradient(135deg,var(--accent-ro),#d4adae)}
+.ielts-opt{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:10px;margin-bottom:8px;border:1.5px solid rgba(155,139,126,.25);font-size:13px;cursor:pointer;transition:all .2s;background:var(--white)}
+.ielts-opt:active{transform:scale(.98)}
+.ielts-opt.selected{border-color:var(--primary);background:rgba(155,139,126,.1)}
+.ielts-opt.correct{border-color:var(--accent-gr)!important;background:rgba(139,168,142,.15)!important;color:#2d6a4f}
+.ielts-opt.wrong{border-color:var(--accent-ro)!important;background:rgba(196,148,148,.15)!important;color:#9b2c2c}
+.ielts-audio-bar{display:flex;align-items:center;gap:10px;padding:14px;background:linear-gradient(135deg,rgba(143,163,176,.15),rgba(143,163,176,.05));border-radius:12px;margin-bottom:14px}
+.ielts-audio-bar .play-btn{width:40px;height:40px;border-radius:50%;background:var(--accent-bl);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:all .2s}
+.ielts-audio-bar .play-btn:active{transform:scale(.93)}
+.ielts-audio-bar .play-btn.playing{background:var(--accent-w);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.ielts-audio-bar .audio-label{font-size:13px;color:var(--text-p);font-weight:500}
+.ielts-audio-bar .audio-sub{font-size:11px;color:var(--text-s)}
+.ielts-feedback{padding:12px 14px;border-radius:10px;margin-top:10px;font-size:13px;line-height:1.6;display:none}
+.ielts-feedback.correct{background:rgba(139,168,142,.15);color:#2d6a4f;display:block}
+.ielts-feedback.wrong{background:rgba(196,148,148,.15);color:#9b2c2c;display:block}
+.speaking-card{background:var(--card-alt);border-radius:12px;padding:14px;margin-bottom:12px}
+.speaking-card .q-label{font-size:11px;color:var(--accent-bl);font-weight:600;margin-bottom:6px}
+.speaking-card .q-text{font-size:13px;color:var(--text-p);margin-bottom:10px;line-height:1.6}
+.speaking-card .answer-box{background:var(--white);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;color:var(--text-s);display:none;margin-top:8px}
+.speaking-card .tip-box{background:rgba(139,168,142,.1);border-radius:8px;padding:10px;font-size:12px;line-height:1.6;color:var(--accent-gr);margin-top:8px}
+.loading-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--primary-l);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auto-refresh-badge{font-size:10px;padding:2px 6px;border-radius:6px;background:rgba(143,168,142,.15);color:var(--accent-gr);margin-left:6px}
+.share-tip{font-size:11px;color:var(--text-s);text-align:center;margin-top:8px;padding:8px;background:rgba(143,168,142,.1);border-radius:8px}
+.sync-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--card);box-shadow:var(--shadow);font-size:11px;font-weight:600;color:var(--text-s);flex-shrink:0}
+.sync-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--text-s);flex-shrink:0;transition:background .3s}
+.sync-chip .dot.on{background:var(--accent-gr)}
+.sync-chip .dot.busy{background:var(--accent-w);animation:pulse 1s infinite}
+.sync-chip .dot.err{background:var(--accent-ro)}
+.code-box{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:17px;font-weight:700;letter-spacing:1.5px;text-align:center;padding:14px;background:var(--white);border:1.5px dashed var(--primary-l);border-radius:var(--r-sm);color:var(--text-p);word-break:break-all;user-select:all}
+.hint{font-size:11.5px;color:var(--text-s);line-height:1.65;margin-top:8px}
+.hint b{color:var(--text-p)}
+.note-src{display:inline-block;font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(155,139,126,.12);color:var(--text-s);margin-left:6px;font-weight:600;vertical-align:middle}
+.rotate-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--card);border-radius:var(--r-sm);margin-bottom:12px;box-shadow:var(--shadow)}
+.rotate-bar .ri{font-size:11px;color:var(--text-s);line-height:1.5}
+.rotate-bar .ri b{color:var(--text-p);font-weight:600}
+.kw{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(143,163,176,.15);color:#5d7684;margin:0 4px 4px 0}
+.btn:disabled{opacity:.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="flex-between">
+      <div><h1 id="page-title">总览</h1><div class="date" id="page-date"></div></div>
+      <button class="sync-chip" id="sync-chip" onclick="SyncUI.open()"><span class="dot" id="sync-dot"></span><span id="sync-chip-text">未同步</span></button>
+    </div>
+  </div>
+  <div class="main">
+    <!-- 总览 -->
+    <div class="page active" id="page-overview">
+      <div class="card">
+        <div class="flex-between mb-12"><div class="card-title" style="margin:0">今日委托</div><button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="TaskModal.open()">+ 添加</button></div>
+        <ul class="task-list" id="task-list"></ul>
+        <div class="empty-state" id="task-empty"><div class="emoji">📝</div><p>暂无任务</p></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card" style="margin:0"><div class="card-title">本月消费</div><div class="card-stat"><span class="num" id="stat-expense" style="color:var(--accent-ro)">¥0</span></div><div class="progress-bar mt-8"><div class="fill" id="expense-bar" style="width:0;background:var(--accent-ro)"></div></div></div>
+        <div class="card" style="margin:0"><div class="card-title">本月收入</div><div class="card-stat"><span class="num" id="stat-income" style="color:var(--accent-gr)">¥0</span></div><div class="progress-bar mt-8"><div class="fill" id="income-bar" style="width:0;background:var(--accent-gr)"></div></div></div>
+      </div>
+      <div class="card" style="margin-top:12px"><div class="flex-between"><div class="card-title" style="margin:0">本月结余</div><span class="badge" id="net-badge">计算中...</span></div><div class="card-stat mt-8"><span class="num" id="stat-net">¥0</span><span class="unit">元</span></div></div>
+    </div>
+    <!-- 生活 -->
+    <div class="page" id="page-life">
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-sub="life-expense">💰 每日消费</button>
+        <button class="sub-tab" data-sub="life-exercise">🏃 运动记录</button>
+        <button class="sub-tab" data-sub="life-income">💵 月收入</button>
+      </div>
+      <div class="sub-panel active" id="panel-life-expense">
+        <div class="card">
+          <div class="cal-header"><button class="cal-nav" onclick="Calendar.prev()">&#8249;</button><h3 id="cal-month-label"></h3><button class="cal-nav" onclick="Calendar.next()">&#8250;</button></div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div id="expense-detail-section"></div>
+      </div>
+      <div class="sub-panel" id="panel-life-exercise">
+        <div class="card"><div class="card-title">选择运动类型</div><div class="exercise-grid" id="exercise-grid"></div></div>
+        <div class="card" id="exercise-add-card" style="display:none">
+          <div class="card-title" id="exercise-add-title">记录运动</div>
+          <div class="field"><label>时长（分钟）</label><input type="number" id="exercise-min" placeholder="如：30" min="1"></div>
+          <div class="field"><label>备注（可选）</label><input type="text" id="exercise-note" placeholder="如：晨跑"></div>
+          <button class="btn btn-green btn-block" onclick="ExerciseLog.add()">✓ 保存记录</button>
+        </div>
+        <div class="card"><div class="card-title">今日运动</div><div id="exercise-log-list"></div><div class="empty-state" id="exercise-empty"><div class="emoji">🧘</div><p>今日暂无运动</p></div></div>
+      </div>
+      <div class="sub-panel" id="panel-life-income">
+        <div class="card"><div class="flex-between mb-12"><div class="card-title" style="margin:0">月度收入</div><button class="btn btn-green" style="padding:6px 12px;font-size:12px" onclick="IncomeModal.open()">+ 添加</button></div><div id="income-list"></div><div class="empty-state" id="income-empty"><div class="emoji">💳</div><p>暂无收入记录</p></div></div>
+        <div class="card" style="margin-top:8px"><div class="card-title">本月总收入</div><div class="card-stat"><span class="num" style="color:var(--accent-gr)" id="income-total">¥0</span><span class="unit">元</span></div></div>
+      </div>
+    </div>
+    <!-- 外化 -->
+    <div class="page" id="page-external">
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-sub="ext-douyin">抖音选题库</button>
+        <button class="sub-tab" data-sub="ext-xhs">小红书选题库</button>
+        <button class="sub-tab" data-sub="ext-nutrient">成分党选题库</button>
+      </div>
+      <div class="sub-panel active" id="panel-ext-douyin">
+        <div class="rotate-bar"><div class="ri" id="douyin-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('douyin')">🔄 刷新</button></div>
+        <div id="douyin-list"></div>
+        <div class="share-tip" style="margin-top:4px">🔍 点「在抖音搜这个选题」会打开抖音官方搜索结果页，手机上会直接唤起抖音 APP</div>
+      </div>
+      <div class="sub-panel" id="panel-ext-xhs">
+        <div class="rotate-bar"><div class="ri" id="xhs-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('xhs')">🔄 刷新</button></div>
+        <div id="xhs-list"></div>
+        <div class="share-tip" style="margin-top:4px">🔍 点「在小红书搜这个选题」会打开小红书官方搜索结果页，手机上会直接唤起小红书 APP</div>
+      </div>
+      <div class="sub-panel" id="panel-ext-nutrient">
+        <div class="rotate-bar"><div class="ri" id="nutrient-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('nutrient')">🔄 刷新</button></div>
+        <div id="nutrient-list"></div>
+        <div class="share-tip" style="margin-top:4px">🔍 点「在小红书搜这个选题」会打开小红书官方搜索结果页，手机上会直接唤起小红书 APP</div>
+      </div>
+    </div>
+    <!-- 内化 -->
+    <div class="page" id="page-internal">
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-sub="int-ielts">雅思训练</button>
+        <button class="sub-tab" data-sub="int-reading">阅读书架</button>
+      </div>
+      <div class="sub-panel active" id="panel-int-ielts">
+        <div class="skill-card" onclick="IELTS.start('listening')"><div class="skill-icon accent-blue">🎧</div><div class="skill-info"><h4>听力练习</h4><p>新闻音频 · 对话练习</p><div class="progress-bar"><div class="fill" id="prog-listening" style="width:0%;background:var(--accent-bl)"></div></div></div><div class="skill-progress" id="score-listening">0%</div></div>
+        <div class="skill-card" onclick="IELTS.start('speaking')"><div class="skill-icon accent-rose">🎤</div><div class="skill-info"><h4>口语练习</h4><p>Part 1/2/3 模拟面试</p><div class="progress-bar"><div class="fill" id="prog-speaking" style="width:0%;background:var(--accent-ro)"></div></div></div><div class="skill-progress" id="score-speaking">0%</div></div>
+        <div class="skill-card" onclick="IELTS.start('reading')"><div class="skill-icon accent-warm">📖</div><div class="skill-info"><h4>阅读练习</h4><p>学术文章 · 词汇积累</p><div class="progress-bar"><div class="fill" id="prog-reading" style="width:0%;background:var(--accent-w)"></div></div></div><div class="skill-progress" id="score-reading">0%</div></div>
+        <div class="skill-card" onclick="IELTS.start('writing')"><div class="skill-icon accent-green">✍️</div><div class="skill-info"><h4>写作练习</h4><p>范文模板 · 题型讲解</p><div class="progress-bar"><div class="fill" id="prog-writing" style="width:0%;background:var(--accent-gr)"></div></div></div><div class="skill-progress" id="score-writing">0%</div></div>
+        <div class="card" id="ielts-quiz-area" style="display:none"><div class="card-title" id="ielts-quiz-title">听力练习</div><div id="ielts-quiz-content"></div><div class="divider"></div><button class="btn btn-primary btn-block" id="ielts-submit-btn" onclick="IELTS.submitAnswer()" style="display:none">提交答案</button><div id="ielts-feedback" class="ielts-feedback"></div></div>
+      </div>
+      <div class="sub-panel" id="panel-int-reading">
+        <div class="flex-between mb-12"><div class="card-title" style="margin:0">我的书架</div><button class="btn btn-primary" style="padding:6px 12px;font-size:12px" onclick="ReadingModal.open()">+ 添加书籍</button></div>
+        <div id="reading-list"></div>
+        <div class="empty-state" id="reading-empty"><div class="emoji">📚</div><p>暂无藏书</p></div>
+      </div>
+    </div>
+  </div>
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-page="overview"><span class="icon">📊</span><span>总览</span></button>
+    <button class="tab-btn" data-page="life"><span class="icon">🌿</span><span>生活</span></button>
+    <button class="tab-btn" data-page="external"><span class="icon">🔥</span><span>外化</span></button>
+    <button class="tab-btn" data-page="internal"><span class="icon">🎓</span><span>内化</span></button>
+  </nav>
+  <div class="modal-overlay" id="modal-task"><div class="modal"><div class="modal-handle"></div><h3>每日委托</h3><div class="field"><label>任务内容</label><input type="text" id="task-input" placeholder="输入任务..." maxlength="100"></div><div class="field"><label>优先级</label><select id="task-priority"><option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option></select></div><button class="btn btn-primary btn-block" onclick="TaskModal.save()">保存任务</button></div></div>
+  <div class="modal-overlay" id="modal-expense"><div class="modal"><div class="modal-handle"></div><h3>记录消费</h3><div class="field"><label>日期</label><input type="text" id="expense-date" readonly style="background:var(--card-alt)"></div><div class="field"><label>消费内容</label><input type="text" id="expense-name" placeholder="如：午餐"></div><div class="field"><label>金额（元）</label><input type="number" id="expense-amt" placeholder="0.00" min="0" step="0.01"></div><div class="field"><label>分类</label><select id="expense-cat"><option value="餐饮">餐饮</option><option value="交通">交通</option><option value="购物">购物</option><option value="娱乐">娱乐</option><option value="医疗">医疗</option><option value="学习">学习</option><option value="其他">其他</option></select></div><button class="btn btn-accent btn-block" onclick="ExpenseModal.save()">保存记录</button></div></div>
+  <div class="modal-overlay" id="modal-income"><div class="modal"><div class="modal-handle"></div><h3>添加收入</h3><div class="field"><label>收入来源</label><input type="text" id="income-source" placeholder="如：工资、兼职"></div><div class="field"><label>金额（元）</label><input type="number" id="income-amt" placeholder="0.00" min="0" step="0.01"></div><div class="field"><label>日期</label><input type="date" id="income-date"></div><button class="btn btn-green btn-block" onclick="IncomeModal.save()">保存收入</button></div></div>
+  <div class="modal-overlay" id="modal-sync"><div class="modal"><div class="modal-handle"></div>
+    <h3>两端同步</h3>
+    <div class="card" style="margin-bottom:12px">
+      <div class="flex-between"><div class="card-title" style="margin:0">当前状态</div><span class="badge" id="sync-state-badge">未开启</span></div>
+      <div class="hint" id="sync-state-text">开启后，手机和电脑用同一个同步码即可共享全部数据。</div>
+    </div>
+    <div id="sync-off-view">
+      <button class="btn btn-primary btn-block" onclick="Sync.createCode()">🔗 生成同步码（第一台设备）</button>
+      <div class="divider"></div>
+      <div class="field"><label>已有同步码？在第二台设备输入</label><input type="text" id="sync-code-input" placeholder="WB-XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
+      <button class="btn btn-outline btn-block" onclick="Sync.joinCode()">📥 加入同步</button>
+      <div class="hint">💡 数据经 AES-256 加密后才上传，同步码就是解密钥匙。请自己保存好，丢了无法找回。</div>
+    </div>
+    <div id="sync-on-view" style="display:none">
+      <div class="card-title">我的同步码</div>
+      <div class="code-box" id="sync-code-show">—</div>
+      <div class="row2 mt-8">
+        <button class="btn btn-outline" onclick="Sync.copyCode()">📋 复制同步码</button>
+        <button class="btn btn-outline" onclick="Sync.copyLink()">🔗 复制同步链接</button>
+      </div>
+      <div class="hint">在另一台设备打开本工作台 → 点右上角同步 → 粘贴这串码即可。或直接把「同步链接」发到手机上打开，自动完成配对。</div>
+      <div class="divider"></div>
+      <div class="row2">
+        <button class="btn btn-green" onclick="Sync.pushNow()">⬆️ 立即上传</button>
+        <button class="btn btn-blue" onclick="Sync.pullNow()">⬇️ 立即拉取</button>
+      </div>
+      <button class="btn btn-outline btn-block mt-8" onclick="Sync.leave()">🚪 退出同步（保留本地数据）</button>
+    </div>
+    <div class="divider"></div>
+    <div class="card-title">本地备份</div>
+    <div class="row2">
+      <button class="btn btn-outline" onclick="Backup.exportFile()">💾 导出备份</button>
+      <button class="btn btn-outline" onclick="document.getElementById('backup-file').click()">📂 导入备份</button>
+    </div>
+    <input type="file" id="backup-file" accept=".json,application/json" style="display:none" onchange="Backup.importFile(this)">
+    <div class="hint">导出的是明文 JSON，可长期留底。导入会与现有数据合并，不会覆盖。</div>
+  </div></div>
+  <div class="modal-overlay" id="modal-reading"><div class="modal"><div class="modal-handle"></div><h3>添加书籍</h3><div class="field"><label>书名</label><input type="text" id="book-title" placeholder="输入书名"></div><div class="field"><label>作者</label><input type="text" id="book-author" placeholder="输入作者"></div><div class="field"><label>状态</label><select id="book-status"><option value="want">想读</option><option value="reading">在读</option><option value="done">读完</option></select></div><div class="field"><label>笔记（可选）</label><textarea id="book-note" placeholder="阅读时做的笔记..."></textarea></div><button class="btn btn-primary btn-block" onclick="ReadingModal.save()">保存书籍</button></div></div>
+</div>
+<script>
+// ===== 存储 + 双端云同步 =====
+var SK = 'wb_v1';
+var SYNC_KEY = 'wb_sync_v1';
+var COLLECTIONS = ['tasks', 'expenses', 'incomes', 'exercises', 'books', 'picks'];
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+// 用本地时区取今天（原来的 toISOString 是 UTC，凌晨会算成前一天）
+function getToday(){ var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+function loadStore(){ try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch(e){ return {}; } }
+
+function saveStore(d, opts){
+  opts = opts || {};
+  var now = Date.now();
+  COLLECTIONS.forEach(function(c){
+    if (!Array.isArray(d[c])) return;
+    d[c].forEach(function(r){ if (!r.updatedAt) r.updatedAt = r.id || now; });
+  });
+  d._m = now;
+  try { localStorage.setItem(SK, JSON.stringify(d)); }
+  catch(e){ alert('本地存储写入失败，可能空间已满'); return; }
+  if (!opts.silent && typeof Sync !== 'undefined') Sync.markDirty();
+}
+
+// 软删除：打墓碑而不是真删，否则另一台设备会把已删的记录again同步回来
+function softDelete(coll, id){
+  var s = loadStore(), arr = s[coll] || [];
+  for (var i = 0; i < arr.length; i++){
+    if (arr[i].id === id){ arr[i].deleted = true; arr[i].updatedAt = Date.now(); }
+  }
+  s[coll] = arr;
+  saveStore(s);
+}
+function live(arr){ return (arr || []).filter(function(r){ return !r.deleted; }); }
+
+// 按 id 合并，同 id 取 updatedAt 更新的一方
+function mergeStore(local, remote){
+  var out = {};
+  Object.keys(local).forEach(function(k){ if (COLLECTIONS.indexOf(k) < 0) out[k] = local[k]; });
+  COLLECTIONS.forEach(function(c){
+    var map = {};
+    (local[c] || []).forEach(function(r){ if (r && r.id != null) map[r.id] = r; });
+    (remote[c] || []).forEach(function(r){
+      if (!r || r.id == null) return;
+      var e = map[r.id];
+      if (!e || (r.updatedAt || 0) > (e.updatedAt || 0)) map[r.id] = r;
+    });
+    var list = Object.keys(map).map(function(k){ return map[k]; });
+    // 30 天前的墓碑可以清掉，避免无限膨胀
+    var cutoff = Date.now() - 30 * 86400000;
+    out[c] = list.filter(function(r){ return !(r.deleted && (r.updatedAt || 0) < cutoff); });
+  });
+  return out;
+}
+
+// ===== 加密（AES-256-GCM，密钥由同步码派生）=====
+function b64(u8){ var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); }
+function ub64(s){ var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+
+var Crypt = {
+  ok: function(){ return !!(window.crypto && window.crypto.subtle && window.isSecureContext); },
+  _key: function(code, salt){
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(code), { name: 'PBKDF2' }, false, ['deriveKey'])
+      .then(function(km){
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' },
+          km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      });
+  },
+  encrypt: function(code, plain){
+    if (!this.ok()) return Promise.resolve('PLAIN1:' + b64(new TextEncoder().encode(plain)));
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return this._key(code, salt).then(function(k){
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(plain));
+    }).then(function(ct){
+      var body = new Uint8Array(ct), all = new Uint8Array(28 + body.length);
+      all.set(salt, 0); all.set(iv, 16); all.set(body, 28);
+      return 'AESGCM1:' + b64(all);
+    });
+  },
+  decrypt: function(code, payload){
+    payload = (payload || '').trim();
+    if (payload.indexOf('PLAIN1:') === 0){
+      return Promise.resolve(new TextDecoder().decode(ub64(payload.slice(7))));
+    }
+    if (payload.indexOf('AESGCM1:') !== 0) return Promise.reject(new Error('云端数据格式不识别'));
+    if (!this.ok()) return Promise.reject(new Error('当前环境不支持解密，请用 https 网址打开'));
+    var all = ub64(payload.slice(8));
+    var salt = all.slice(0, 16), iv = all.slice(16, 28), body = all.slice(28);
+    return this._key(code, salt).then(function(k){
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, k, body);
+    }).then(function(pt){ return new TextDecoder().decode(pt); });
+  }
+};
+
+// ===== 同步引擎 =====
+var Sync = {
+  ENDPOINT: 'https://textdb.dev/api/data/',
+  cfg: null, dirtyTimer: null, busy: false, lastErr: '', pollTimer: null,
+
+  init: function(){
+    try { this.cfg = JSON.parse(localStorage.getItem(SYNC_KEY)); } catch(e){ this.cfg = null; }
+    // 支持 #sync=CODE 一键配对
+    var m = (location.hash || '').match(/sync=([A-Za-z0-9\-]+)/);
+    if (m){
+      var code = decodeURIComponent(m[1]).toUpperCase();
+      history.replaceState(null, '', location.pathname + location.search);
+      if (!this.cfg || this.cfg.code !== code){
+        this.cfg = { code: code, at: Date.now() };
+        this.persist();
+        var self = this;
+        setTimeout(function(){ self.pull(true); }, 300);
+      }
+    }
+    this.paint();
+    if (this.on()){
+      var self2 = this;
+      this.pull(true);
+      this.pollTimer = setInterval(function(){ if (!document.hidden) self2.pull(false); }, 60000);
+      document.addEventListener('visibilitychange', function(){ if (!document.hidden) self2.pull(false); });
+      window.addEventListener('online', function(){ self2.pull(false); });
+    }
+  },
+
+  on: function(){ return !!(this.cfg && this.cfg.code); },
+  persist: function(){ localStorage.setItem(SYNC_KEY, JSON.stringify(this.cfg)); },
+
+  // 从同步码派生存储键：云端只看得到这串 hash，看不到同步码本身
+  slug: function(code){
+    var s = 'wb-sync-v1|' + code, a = 5381, b = 52711, c = 1103515245;
+    for (var i = 0; i < s.length; i++){ a = ((a << 5) + a + s.charCodeAt(i)) >>> 0; }
+    for (var j = s.length - 1; j >= 0; j--){ b = ((b << 5) + b + s.charCodeAt(j) * 7) >>> 0; }
+    for (var k = 0; k < s.length; k++){ c = (c * 31 + s.charCodeAt(k) * (k + 3)) >>> 0; }
+    return 'wbk' + a.toString(36) + b.toString(36) + c.toString(36);
+  },
+
+  genCode: function(){
+    var AB = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ', out = [];
+    var r = new Uint8Array(12);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(r);
+    else for (var x = 0; x < 12; x++) r[x] = Math.floor(Math.random() * 256);
+    for (var i = 0; i < 12; i++) out.push(AB[r[i] % 32]);
+    return 'WB-' + out.slice(0, 4).join('') + '-' + out.slice(4, 8).join('') + '-' + out.slice(8, 12).join('');
+  },
+
+  normalize: function(v){
+    v = (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.indexOf('WB') === 0) v = v.slice(2);
+    if (v.length !== 12) return null;
+    return 'WB-' + v.slice(0, 4) + '-' + v.slice(4, 8) + '-' + v.slice(8, 12);
+  },
+
+  markDirty: function(){
+    if (!this.on()) { this.paint(); return; }
+    var self = this;
+    clearTimeout(this.dirtyTimer);
+    this.paint('busy');
+    this.dirtyTimer = setTimeout(function(){ self.push(); }, 2000);
+  },
+
+  push: function(){
+    if (!this.on()) return Promise.resolve(false);
+    var self = this, code = this.cfg.code;
+    this.busy = true; this.paint('busy');
+    var data = loadStore();
+    return Crypt.encrypt(code, JSON.stringify(data))
+      .then(function(payload){
+        return fetch(self.ENDPOINT + self.slug(code), {
+          method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload
+        });
+      })
+      .then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        self.cfg.lastPush = Date.now(); self.persist();
+        self.busy = false; self.lastErr = ''; self.paint();
+        return true;
+      })
+      .catch(function(err){
+        self.busy = false; self.lastErr = err.message || '上传失败'; self.paint('err');
+        return false;
+      });
+  },
+
+  pull: function(silentFail){
+    if (!this.on()) return Promise.resolve(false);
+    var self = this, code = this.cfg.code;
+    this.busy = true; this.paint('busy');
+    return fetch(this.ENDPOINT + this.slug(code), { cache: 'no-store' })
+      .then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+      })
+      .then(function(txt){
+        txt = (txt || '').trim();
+        if (!txt) { self.busy = false; self.paint(); return false; }
+        return Crypt.decrypt(code, txt).then(function(plain){
+          var remote = JSON.parse(plain);
+          var local = loadStore();
+          var merged = mergeStore(local, remote);
+          var before = JSON.stringify(local), after = JSON.stringify(merged);
+          saveStore(merged, { silent: true });
+          self.cfg.lastPull = Date.now(); self.persist();
+          self.busy = false; self.lastErr = ''; self.paint();
+          if (before !== after){
+            renderAll();
+            // 本地有云端没有的内容，补推一次
+            if (JSON.stringify(remote) !== after) self.push();
+          }
+          return true;
+        });
+      })
+      .catch(function(err){
+        self.busy = false;
+        self.lastErr = err.message || '拉取失败';
+        self.paint('err');
+        if (!silentFail) alert('拉取失败：' + self.lastErr);
+        return false;
+      });
+  },
+
+  paint: function(force){
+    var dot = document.getElementById('sync-dot');
+    var txt = document.getElementById('sync-chip-text');
+    if (!dot || !txt) return;
+    dot.className = 'dot';
+    if (!this.on()){ txt.textContent = '未同步'; }
+    else if (force === 'busy' || this.busy){ dot.classList.add('busy'); txt.textContent = '同步中'; }
+    else if (force === 'err' || this.lastErr){ dot.classList.add('err'); txt.textContent = '同步失败'; }
+    else { dot.classList.add('on'); txt.textContent = '已同步'; }
+    SyncUI.paintPanel();
+  },
+
+  // --- 面板操作 ---
+  createCode: function(){
+    var code = this.genCode();
+    this.cfg = { code: code, at: Date.now() };
+    this.persist();
+    var self = this;
+    this.push().then(function(ok){
+      SyncUI.paintPanel();
+      self.paint();
+      if (ok) alert('同步码已生成：\n' + code + '\n\n请在另一台设备输入同一个码。');
+      else alert('同步码已生成，但首次上传失败，请检查网络后点「立即上传」。');
+      if (!self.pollTimer){
+        self.pollTimer = setInterval(function(){ if (!document.hidden) self.pull(false); }, 60000);
+      }
+    });
+  },
+
+  joinCode: function(){
+    var raw = document.getElementById('sync-code-input').value;
+    var code = this.normalize(raw);
+    if (!code){ alert('同步码格式不对，应该是 12 位字母数字，例如 WB-A3F9-K2M7-P1Q8'); return; }
+    this.cfg = { code: code, at: Date.now() };
+    this.persist();
+    var self = this;
+    this.pull(true).then(function(ok){
+      SyncUI.paintPanel(); self.paint();
+      if (ok){ alert('配对成功，数据已合并。'); self.push(); }
+      else alert('已保存同步码，但云端暂时没读到数据。可以在另一台设备点「立即上传」后，这边再点「立即拉取」。');
+      if (!self.pollTimer){
+        self.pollTimer = setInterval(function(){ if (!document.hidden) self.pull(false); }, 60000);
+      }
+    });
+  },
+
+  pushNow: function(){ var s = this; this.push().then(function(ok){ alert(ok ? '已上传到云端' : '上传失败：' + s.lastErr); }); },
+  pullNow: function(){ var s = this; this.pull(true).then(function(ok){ alert(ok ? '已从云端拉取并合并' : '拉取失败：' + (s.lastErr || '云端暂无数据')); }); },
+
+  copyCode: function(){ copyText(this.cfg.code, '同步码已复制'); },
+  copyLink: function(){
+    var url = location.origin + location.pathname + '#sync=' + encodeURIComponent(this.cfg.code);
+    copyText(url, '同步链接已复制，发到手机打开即可自动配对');
+  },
+
+  leave: function(){
+    if (!confirm('退出同步？本地数据会保留，但不再与其他设备互通。')) return;
+    this.cfg = null;
+    localStorage.removeItem(SYNC_KEY);
+    clearInterval(this.pollTimer); this.pollTimer = null;
+    this.paint(); SyncUI.paintPanel();
+  }
+};
+
+function copyText(text, okMsg){
+  var done = function(){ alert(okMsg); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){ prompt('手动复制：', text); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ prompt('手动复制：', text); }
+    document.body.removeChild(ta);
+  }
+}
+
+var SyncUI = {
+  open: function(){ this.paintPanel(); openModal('modal-sync'); },
+  paintPanel: function(){
+    var badge = document.getElementById('sync-state-badge');
+    var text = document.getElementById('sync-state-text');
+    var offV = document.getElementById('sync-off-view');
+    var onV = document.getElementById('sync-on-view');
+    var show = document.getElementById('sync-code-show');
+    if (!badge) return;
+    if (Sync.on()){
+      badge.textContent = Sync.lastErr ? '异常' : '已开启';
+      badge.style.color = Sync.lastErr ? 'var(--accent-ro)' : 'var(--accent-gr)';
+      var t = [];
+      if (Sync.cfg.lastPush) t.push('上次上传 ' + new Date(Sync.cfg.lastPush).toLocaleTimeString('zh-CN'));
+      if (Sync.cfg.lastPull) t.push('上次拉取 ' + new Date(Sync.cfg.lastPull).toLocaleTimeString('zh-CN'));
+      if (Sync.lastErr) t.push('错误：' + Sync.lastErr);
+      if (!Crypt.ok()) t.push('⚠️ 当前不是 https 环境，数据未加密上传');
+      text.innerHTML = t.length ? t.join('<br>') : '改动会在 2 秒后自动上传，每分钟自动拉取一次。';
+      offV.style.display = 'none';
+      onV.style.display = '';
+      show.textContent = Sync.cfg.code;
+    } else {
+      badge.textContent = '未开启';
+      badge.style.color = 'var(--text-s)';
+      text.textContent = '开启后，手机和电脑用同一个同步码即可共享全部数据。';
+      offV.style.display = '';
+      onV.style.display = 'none';
+    }
+  }
+};
+
+var Backup = {
+  exportFile: function(){
+    var data = loadStore();
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '工作台备份-' + getToday() + '.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 500);
+  },
+  importFile: function(input){
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try {
+        var remote = JSON.parse(reader.result);
+        var merged = mergeStore(loadStore(), remote);
+        saveStore(merged);
+        renderAll();
+        alert('导入完成，已与现有数据合并。');
+      } catch(e){ alert('文件解析失败：' + e.message); }
+      input.value = '';
+    };
+    reader.readAsText(f);
+  }
+};
+
+function renderAll(){
+  try {
+    Overview.refresh();
+    Calendar.render();
+    ExerciseLog.render();
+    IncomeModal.refresh();
+    ReadingList.render();
+  } catch(e){}
+}
+
+
+// ===== 导航 =====
+var PAGE_TITLES={overview:'总览',life:'生活',external:'外化',internal:'内化'};
+function switchPage(name){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  var page=document.getElementById('page-'+name);
+  var btn=document.querySelector('.tab-btn[data-page="'+name+'"]');
+  if(page)page.classList.add('active');
+  if(btn)btn.classList.add('active');
+  document.getElementById('page-title').textContent=PAGE_TITLES[name]||name;
+  if(name==='overview')Overview.refresh();
+  if(name==='life'){Calendar.render();ExerciseLog.render();IncomeModal.refresh();}
+  if(name==='external')External.renderAll();
+  if(name==='internal'){IELTS.renderProgress();ReadingList.render();}
+}
+document.querySelectorAll('.tab-btn').forEach(function(btn){btn.addEventListener('click',function(){switchPage(btn.dataset.page);});});
+document.querySelectorAll('.sub-tab').forEach(function(tab){
+  tab.addEventListener('click',function(){
+    var parent=tab.closest('.page');
+    parent.querySelectorAll('.sub-tab').forEach(function(t){t.classList.remove('active');});
+    parent.querySelectorAll('.sub-panel').forEach(function(p){p.classList.remove('active');});
+    tab.classList.add('active');
+    var panel=document.getElementById('panel-'+tab.dataset.sub);
+    if(panel)panel.classList.add('active');
+  });
+});
+function openModal(id){var m=document.getElementById(id);if(m)m.classList.add('show');}
+function closeModal(id){var m=document.getElementById(id);if(m)m.classList.remove('show');}
+document.querySelectorAll('.modal-overlay').forEach(function(overlay){
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.classList.remove('show');});
+});
+
+// ===== 日期 =====
+function updateDate(){var d=new Date();var opts={weekday:'long',year:'numeric',month:'long',day:'numeric'};document.getElementById('page-date').textContent=d.toLocaleDateString('zh-CN',opts);}
+updateDate();
+
+// ===== 任务 =====
+var TaskModal={open:function(){document.getElementById('task-input').value='';document.getElementById('task-priority').value='medium';openModal('modal-task');},save:function(){var text=document.getElementById('task-input').value.trim();if(!text){alert('请输入任务内容');return;}var store=loadStore();if(!store.tasks)store.tasks=[];store.tasks.push({id:Date.now(),text:text,priority:document.getElementById('task-priority').value,done:false,createdAt:new Date().toISOString()});saveStore(store);closeModal('modal-task');Overview.refresh();}};
+var TaskList={render:function(){var store=loadStore();var tasks=live(store.tasks).sort(function(a,b){var order={high:0,medium:1,low:2};if(a.done!==b.done)return a.done?1:-1;return(order[a.priority]||1)-(order[b.priority]||1);});var list=document.getElementById('task-list');var empty=document.getElementById('task-empty');if(!tasks.length){list.innerHTML='';empty.style.display='';return;}empty.style.display='none';var html='';for(var i=0;i<tasks.length;i++){var t=tasks[i];var pc=t.priority==='high'?'var(--accent-ro)':t.priority==='medium'?'var(--accent-w)':'var(--accent-gr)';var pl=t.priority==='high'?'高':t.priority==='medium'?'中':'低';var cc=t.done?'task-check done':'task-check';var tc=t.done?'task-text done':'task-text';html+='<li class="task-item"><div class="'+cc+'" onclick="Tasks.toggle('+t.id+')"></div><span class="'+tc+'">'+this.escHtml(t.text)+'</span><span class="badge" style="color:'+pc+'">'+pl+'</span><button class="task-del" onclick="Tasks.del('+t.id+')">×</button></li>';}list.innerHTML=html;},escHtml:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}};
+var Tasks={toggle:function(id){var store=loadStore();var t=store.tasks&&store.tasks.find(function(x){return x.id===id;});if(t){t.done=!t.done;t.updatedAt=Date.now();}saveStore(store);TaskList.render();},del:function(id){softDelete('tasks',id);TaskList.render();}};
+
+// ===== 日历 + 消费 =====
+var calYear,calMonth;
+function initCal(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();}initCal();
+var Calendar={prev:function(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}this.render();},next:function(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}this.render();},render:function(){var label=calYear+'年'+(calMonth+1)+'月';document.getElementById('cal-month-label').textContent=label;var grid=document.getElementById('cal-grid');var today=getToday();var store=loadStore();var expenses=live(store.expenses);var daysWithData={};expenses.forEach(function(e){if(e.date&&e.date.startsWith(calYear+'-'+String(calMonth+1).padStart(2,'0'))){daysWithData[parseInt(e.date.slice(8))]=true;}});var firstDay=new Date(calYear,calMonth,1).getDay();var daysInMonth=new Date(calYear,calMonth+1,0).getDate();var daysInPrev=new Date(calYear,calMonth,0).getDate();var html='';var dayNames=['日','一','二','三','四','五','六'];for(var d=0;d<7;d++){html+='<div class="cal-day-name">'+dayNames[d]+'</div>';}for(var i=firstDay-1;i>=0;i--){html+='<div class="cal-day other-month">'+(daysInPrev-i)+'</div>';}for(var d=1;d<=daysInMonth;d++){var dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');var isToday=dateStr===today;var hasData=!!daysWithData[d];html+='<div class="cal-day'+(isToday?' today':'')+(hasData?' has-data':'')+'" onclick="ExpenseModal.open(\''+dateStr+'\')">'+d+'</div>';}var remaining=(7-(firstDay+daysInMonth)%7)%7;for(var d=1;d<=remaining;d++){html+='<div class="cal-day other-month">'+d+'</div>';}grid.innerHTML=html;this.showDayDetail(today);},showDayDetail:function(dateStr){var store=loadStore();var expenses=live(store.expenses).filter(function(e){return e.date===dateStr;});var section=document.getElementById('expense-detail-section');if(!expenses.length){section.innerHTML='<div class="empty-state"><div class="emoji">📅</div><p>'+dateStr+' - 暂无记录</p></div>';return;}var total=expenses.reduce(function(s,e){return s+e.amount;},0);var catEmoji={餐饮:'🍜',交通:'🚗',购物:'🛍️',娱乐:'🎮',医疗:'🏥',学习:'📚',其他:'📦'};var html='<div class="card"><div class="flex-between"><div class="card-title" style="margin:0">'+dateStr+' 消费明细</div><span style="font-size:15px;font-weight:700;color:var(--accent-ro)">¥'+total.toFixed(2)+'</span></div>';for(var j=0;j<expenses.length;j++){var e=expenses[j],emoji=catEmoji[e.category]||'📦';html+='<div class="expense-item"><div class="expense-icon" style="background:rgba(196,148,148,.15)">'+emoji+'</div><div class="expense-info"><div class="name">'+this.escHtml(e.name)+'</div><div class="cat">'+e.category+'</div></div><div class="expense-amt" style="color:var(--accent-ro)">-¥'+e.amount.toFixed(2)+'</div><button class="task-del" onclick="Expenses.del('+e.id+')">×</button></div>';}html+='</div>';section.innerHTML=html;},escHtml:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}};
+var ExpenseModal={open:function(ds){this.selectedDate=ds||getToday();document.getElementById('expense-date').value=this.selectedDate;document.getElementById('expense-name').value='';document.getElementById('expense-amt').value='';document.getElementById('expense-cat').value='餐饮';openModal('modal-expense');},save:function(){var name=document.getElementById('expense-name').value.trim();var amount=parseFloat(document.getElementById('expense-amt').value);if(!name||isNaN(amount)||amount<=0){alert('请填写完整信息');return;}var store=loadStore();if(!store.expenses)store.expenses=[];store.expenses.push({id:Date.now(),date:this.selectedDate,name:name,amount:amount,category:document.getElementById('expense-cat').value});saveStore(store);closeModal('modal-expense');Calendar.render();Overview.refresh();}};
+
+// ===== 收入 =====
+var IncomeModal={open:function(){document.getElementById('income-source').value='';document.getElementById('income-amt').value='';document.getElementById('income-date').value=getToday();openModal('modal-income');},save:function(){var source=document.getElementById('income-source').value.trim();var amount=parseFloat(document.getElementById('income-amt').value);if(!source||isNaN(amount)||amount<=0){alert('请填写完整信息');return;}var store=loadStore();if(!store.incomes)store.incomes=[];store.incomes.push({id:Date.now(),source:source,amount:amount,date:document.getElementById('income-date').value||getToday()});saveStore(store);closeModal('modal-income');this.refresh();Overview.refresh();},refresh:function(){var store=loadStore();var incomes=live(store.incomes);var list=document.getElementById('income-list');var empty=document.getElementById('income-empty');var totalEl=document.getElementById('income-total');if(!incomes.length){list.innerHTML='';empty.style.display='';totalEl.textContent='¥0';return;}empty.style.display='none';var total=incomes.reduce(function(s,i){return s+i.amount;},0);totalEl.textContent='¥'+total.toFixed(2);var html='';for(var i=incomes.length-1;i>=0;i--){var inc=incomes[i];html+='<div class="expense-item"><div class="expense-icon" style="background:rgba(139,168,142,.15)">💵</div><div class="expense-info"><div class="name">'+this.escHtml(inc.source)+'</div><div class="cat">'+inc.date+'</div></div><div class="expense-amt" style="color:var(--accent-gr)">+¥'+inc.amount.toFixed(2)+'</div><button class="task-del" onclick="Incomes.del('+inc.id+')">×</button></div>';}list.innerHTML=html;},escHtml:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}};
+var Incomes={del:function(id){softDelete('incomes',id);IncomeModal.refresh();Overview.refresh();}};
+var Expenses={del:function(id){if(!confirm('删除这条消费记录？'))return;softDelete('expenses',id);Calendar.render();Overview.refresh();}};
+
+// ===== 运动 =====
+var EXERCISE_TYPES=[{id:'running',icon:'🏃',name:'跑步'},{id:'yoga',icon:'🧘',name:'瑜伽'},{id:'swimming',icon:'🏊',name:'游泳'},{id:'cycling',icon:'🚴',name:'骑行'},{id:'walking',icon:'🚶',name:'步行'},{id:'hiit',icon:'💪',name:'HIIT'},{id:'weights',icon:'🏋️',name:'力量'},{id:'stretch',icon:'🤸',name:'拉伸'}];
+var selectedExercise=null;
+function renderExerciseGrid(){var grid=document.getElementById('exercise-grid');var html='';for(var i=0;i<EXERCISE_TYPES.length;i++){var ex=EXERCISE_TYPES[i];html+='<div class="exercise-card" data-id="'+ex.id+'" onclick="ExerciseLog.select(\''+ex.id+'\')"><div class="ex-icon">'+ex.icon+'</div><div class="ex-name">'+ex.name+'</div></div>';}grid.innerHTML=html;}renderExerciseGrid();
+var ExerciseLog={select:function(id){selectedExercise=id;document.querySelectorAll('.exercise-card').forEach(function(c){c.classList.remove('selected');});var card=document.querySelector('.exercise-card[data-id="'+id+'"]');if(card)card.classList.add('selected');var ex=EXERCISE_TYPES.find(function(e){return e.id===id;});document.getElementById('exercise-add-title').textContent=ex.icon+' '+ex.name;document.getElementById('exercise-add-card').style.display='';document.getElementById('exercise-min').value='';document.getElementById('exercise-note').value='';},add:function(){if(!selectedExercise){alert('请选择运动类型');return;}var mins=parseInt(document.getElementById('exercise-min').value);if(!mins||mins<=0){alert('请输入有效时长');return;}var store=loadStore();if(!store.exercises)store.exercises=[];var ex=EXERCISE_TYPES.find(function(e){return e.id===selectedExercise;});store.exercises.push({id:Date.now(),type:selectedExercise,icon:ex.icon,name:ex.name,minutes:mins,note:document.getElementById('exercise-note').value.trim(),date:getToday()});saveStore(store);document.getElementById('exercise-add-card').style.display='none';this.render();},render:function(){var store=loadStore();var exercises=live(store.exercises).filter(function(e){return e.date===getToday();}).reverse();var list=document.getElementById('exercise-log-list');var empty=document.getElementById('exercise-empty');if(!exercises.length){list.innerHTML='';empty.style.display='';return;}empty.style.display='none';var html='';for(var i=0;i<exercises.length;i++){var e=exercises[i];html+='<div class="exercise-item"><div class="ex-icon">'+e.icon+'</div><div class="ex-info">'+e.name+(e.note?' - '+e.note:'')+'</div><div class="ex-amt">'+e.minutes+'分钟</div><button class="task-del" onclick="ExerciseDelete.del('+e.id+')">×</button></div>';}list.innerHTML=html;}};
+var ExerciseDelete={del:function(id){softDelete('exercises',id);ExerciseLog.render();}};
+
+// ===== 总览 =====
+var Overview={refresh:function(){var store=loadStore();var today=getToday();var thisMonth=today.slice(0,7);TaskList.render();var expenses=live(store.expenses).filter(function(e){return e.date&&e.date.startsWith(thisMonth);});var totalExpense=expenses.reduce(function(s,e){return s+e.amount;},0);document.getElementById('stat-expense').textContent='¥'+totalExpense.toFixed(0);var incomes=live(store.incomes).filter(function(i){return i.date&&i.date.startsWith(thisMonth);});var totalIncome=incomes.reduce(function(s,i){return s+i.amount;},0);document.getElementById('stat-income').textContent='¥'+totalIncome.toFixed(0);var net=totalIncome-totalExpense;document.getElementById('stat-net').textContent='¥'+net.toFixed(0);var badge=document.getElementById('net-badge');if(net>=0){badge.textContent='盈余';badge.style.color='var(--accent-gr)';}else{badge.textContent='超支';badge.style.color='var(--accent-ro)';}var maxVal=Math.max(totalExpense,totalIncome,1);document.getElementById('expense-bar').style.width=(totalExpense/maxVal*100)+'%';document.getElementById('income-bar').style.width=(totalIncome/maxVal*100)+'%';}};
+
+// ===== 外化：选题库 + 6小时轮换 + 平台真实搜索直达 =====
+// 说明：浏览器端受同源策略、平台登录态与请求签名限制，无法直接抓取抖音/小红书内容。
+// 因此这里采用「本地选题策略库 + 每6小时确定性轮换 + 跳转到平台真实搜索结果页」的方案，
+// 所有跳转链接均为平台官方搜索地址，真实可打开，手机端会唤起对应 APP。
+var ROTATE_MS = 6 * 60 * 60 * 1000;
+var SHOW_N = 10;
+
+var LIB = {
+douyin: [
+{t:'我的极简一天',d:'治愈系日常 VLOG，用生活细节替代表演式内容',r:'真实感＋情绪价值。不炫富、不摆拍，观众在你身上看到自己',s:'第一人称叙述＋固定开场钩子（「每天起床第一件事」）',m:'1) 前3秒放最有画面感的一帧 2) 0.5–1秒一切镜保持节奏 3) 治愈系纯音乐 4) 结尾抛一个问题引评论',k:'极简生活vlog'},
+{t:'挑战30天零元消费',d:'系列连载，用数字和进度条制造追更动力',r:'悬念连载。观众天然想知道「第N天他撑住了吗」',s:'连续系列＋可视化进度追踪（每日累计金额计数器）',m:'1) 标题永远带天数 2) 固定时间更新养成习惯 3) 屏幕常驻进度条 4) 每集留一个小危机',k:'30天不花钱挑战'},
+{t:'测评10款平价护肤品',d:'清单式横向对比，直接替用户做决策',r:'强实用性＋省钱心理，满足「避坑」刚需',s:'清单体（Top N）＋强烈的前后对比画面',m:'1) 封面用大字号写「10款」 2) 每款只讲一个核心结论 3) 必须有踩雷款才可信 4) 结尾给明确排名',k:'平价护肤品测评'},
+{t:'早八人的通勤五分钟',d:'高度具体的场景切片，精准命中上班族',r:'场景共鸣。同一时间、同一状态的人瞬间被击中',s:'固定时间锚点＋快节奏剪辑，全程第一视角',m:'1) 用真实闹钟声开场 2) 卡点转场配通勤节奏 3) 出现地铁/电梯等公共符号 4) 结尾一句自嘲',k:'早八通勤'},
+{t:'一个人住的第365天',d:'时间锚点叙事，把独居沉淀成情绪作品',r:'数字锚点＋孤独经济，独居人群基数大且情感浓度高',s:'纪录片式剪辑，先铺日常再收情绪',m:'1) 开头交代「365天前我搬进来」 2) 中段展示生活痕迹 3) 后段情绪转折 4) 结尾留白不煽情',k:'独居日常'},
+{t:'我把工资拆成了六个账户',d:'把抽象理财变成看得见的操作流程',r:'方法论可视化。看完就能照做，收藏率极高',s:'白板/手账式讲解＋屏幕录制真实账户',m:'1) 开头给结论「六个账户」 2) 逐个讲用途和比例 3) 展示真实APP界面 4) 引导评论区要模板',k:'工资分配'},
+{t:'素人改造：从邋遢到精致',d:'改造类内容，靠视觉落差留住观众',r:'前后反差是短视频最强的钩子，没有之一',s:'先放改造后画面倒叙，再回到改造前',m:'1) 前3秒直接放「后」的镜头 2) 中间快剪改造过程 3) 关键节点定格标注 4) 结尾同机位对比',k:'素人改造'},
+{t:'打工人的深夜食堂',d:'深夜情绪出口类内容，治愈＋食欲双驱动',r:'时间段情绪＋食物特写，深夜刷到几乎必停留',s:'暖色调打光＋近景特写，弱化人物强化氛围',m:'1) 环境音优先于BGM 2) 食物出锅瞬间给慢镜 3) 少说话多留白 4) 固定深夜发布',k:'深夜食堂 打工人'},
+{t:'三个月瘦20斤真实记录',d:'结果导向的过程记录，用体重曲线说话',r:'明确结果＋可验证过程，比任何口号都有说服力',s:'数据驱动＋周期性打卡，全程同机位',m:'1) 标题写死数字和周期 2) 每周固定角度拍体态 3) 公开饮食和运动细节 4) 承认平台期',k:'三个月瘦20斤'},
+{t:'被裁员后我做了这些事',d:'时事情绪＋自救指南，兼顾共鸣与实用',r:'集体焦虑话题，评论区天然活跃',s:'先共情后给方案，避免说教口吻',m:'1) 开头不卖惨只陈述事实 2) 列出3件具体做的事 3) 给可执行时间表 4) 结尾克制地打气',k:'裁员后'},
+{t:'100块能在菜市场买多少',d:'把抽象物价变成具象画面',r:'具象化实验＋生活气息，全年龄层都能看懂',s:'实拍全过程＋最后摊开所有战利品',m:'1) 开头亮出100元现金 2) 每摊报价格 3) 结尾平铺全部食材 4) 算出人均几餐',k:'100元菜市场'},
+{t:'面试官最想听到的回答',d:'干货型内容，看完立刻能用',r:'即时可用的高价值信息，收藏和转发双高',s:'问题—错误答案—正确答案的三段式',m:'1) 直接抛面试原题 2) 先演错误示范 3) 再给标准回答 4) 补一句底层逻辑',k:'面试回答技巧'},
+{t:'租房改造只花了两千块',d:'低成本高落差，租房党的强需求',r:'预算限制制造惊喜感，「才两千」本身就是钩子',s:'预算透明化＋逐项列出花费清单',m:'1) 标题写死预算 2) 每件物品标价上屏 3) 展示可复原的改造手法 4) 结尾晒总账',k:'出租屋改造'},
+{t:'我妈的存钱智慧',d:'代际视角切入理财，情感与实用兼具',r:'亲情共鸣＋朴素方法论，跨年龄层传播',s:'人物访谈式，让母亲自己说',m:'1) 开头用一句妈妈的原话 2) 中段还原具体做法 3) 加入自己的反思 4) 结尾引导观众讲自家故事',k:'存钱方法'},
+{t:'早起5点的城市什么样',d:'猎奇视角，展示大多数人没见过的时段',r:'信息差＋画面美感，天然适合完播',s:'延时摄影＋城市空镜，弱叙事强氛围',m:'1) 用时间戳标注每个画面 2) 拍环卫工/早餐铺等真实场景 3) 环境音为主 4) 结尾接日出',k:'五点起床'},
+{t:'全网最全Excel快捷键',d:'工具型内容，天生的收藏夹选手',r:'高实用低时效，长尾流量能吃很久',s:'屏幕录制＋大字号键位提示',m:'1) 每个快捷键单独3秒 2) 左上角常驻按键提示 3) 节奏统一便于暂停 4) 结尾引导收藏',k:'excel快捷键'},
+{t:'断舍离扔掉300件东西',d:'用数量制造冲击，讲整理更讲心态',r:'数量级冲击＋轻度猎奇，看别人扔东西很解压',s:'过程堆叠＋前后空间对比',m:'1) 开头放满地待扔物品 2) 分类快剪 3) 挑3件讲背后的故事 4) 结尾同机位对比空间',k:'断舍离'},
+{t:'一周不碰手机的下场',d:'自我实验类，悬念感天然拉满',r:'反常识实验，观众想验证自己的猜测',s:'日记体连载，每天一个小结论',m:'1) 开场立规则 2) 每天记录情绪变化 3) 中途设置一次破功危机 4) 结尾给真实感受不硬拔高',k:'戒手机挑战'},
+{t:'便利店隐藏吃法测评',d:'低门槛可复刻，看完就想去买',r:'零成本模仿门槛，转化行动力极强',s:'一条视频集中测3–5种搭配',m:'1) 亮出所有原材料 2) 每种搭配30秒内讲完 3) 真实试吃反应 4) 结尾排个名次',k:'便利店隐藏吃法'},
+{t:'30岁转行来得及吗',d:'年龄焦虑议题，观点＋案例双线',r:'高争议话题，评论区自然发酵带动推荐',s:'先立观点再用具体案例支撑',m:'1) 开头给明确立场 2) 举2个真实转行案例 3) 承认代价不画饼 4) 结尾抛问题给评论区',k:'30岁转行'}
+],
+xhs: [
+{t:'早起五分钟通勤妆容教程',d:'极简化妆流程，精准定位学生党与职场新人',r:'精准人群（早起困难户）＋时间限制降低心理门槛',s:'痛点切入：时间紧但要有效果，步骤强拆解',m:'1) 封面做妆前妆后对比 2) 正文分步骤编号 3) 埋关键词「通勤」「伪素颜」 4) 评论区引导要产品链接',k:'通勤妆容 五分钟'},
+{t:'独居女生必备安全好物',d:'家居好物清单，强调安全感与生活品质',r:'情感共鸣（独居安全）＋实用清单，收藏转发双高',s:'生活方式种草，场景化呈现而非单品罗列',m:'1) 标题制造身份认同 2) 统一滤镜风格 3) 走心不夸张的文案 4) 标签打「独居」「安全感」',k:'独居女生 安全好物'},
+{t:'月薪五千如何存下五万',d:'理财干货，用具体数字建立可信度',r:'反差效应（低收入高储蓄）＋可复制方法论',s:'数据驱动说服＋手把手教学',m:'1) 标题用反差数字 2) 正文放真实表格截图 3) 送免费记账模板引流 4) 评论区做转化',k:'月薪5000 存钱'},
+{t:'小个子女生秋季穿搭显高攻略',d:'细分人群叠加季节热点，双重精准',r:'细分人群＋季节时效，搜索流量稳定',s:'穿搭对比制造视觉冲击，分场景展示',m:'1) 首图放最出片的一套 2) 每套标注身高体重 3) 讲清比例逻辑而非只晒图 4) 引导关注下期',k:'小个子 显高穿搭'},
+{t:'三十平出租屋改造清单',d:'租房党强需求，含具体预算与链接',r:'可复制性极强，「三十平」精准锚定户型',s:'清单体＋前后对比图，明码标价',m:'1) 首图放改造后全景 2) 逐项列价格 3) 强调不破坏原墙面 4) 结尾附购物清单',k:'出租屋改造'},
+{t:'打工人低卡午餐便当',d:'一周不重样的备餐方案，实用且出片',r:'高频刚需＋视觉美感，适合反复收藏',s:'周更系列＋统一构图，建立栏目感',m:'1) 固定俯拍机位 2) 标注热量与耗时 3) 提供备餐时间表 4) 系列编号方便追更',k:'减脂便当'},
+{t:'面试穿搭不出错公式',d:'把穿搭抽象成可套用的公式',r:'低容错场景＋明确公式，决策焦虑刚需',s:'公式化表达＋正反例对照',m:'1) 首图写公式本身 2) 分行业给不同版本 3) 放明确的反面示例 4) 附价位区间',k:'面试穿搭'},
+{t:'无痛早起的七个方法',d:'习惯养成类干货，主打「无痛」降低门槛',r:'普适痛点＋「无痛」降低行动阻力',s:'数字清单＋原理说明，避免空喊口号',m:'1) 标题带数字 2) 每条配一句原理 3) 承认失败经历增加可信度 4) 引导评论打卡',k:'无痛早起'},
+{t:'一个人吃饭的仪式感',d:'一人食内容，情绪价值大于教程价值',r:'孤独经济＋美学表达，共鸣与审美双满足',s:'弱教程强氛围，图片质感优先',m:'1) 首图定调（光影、餐具） 2) 文案偏散文体 3) 少说步骤多说感受 4) 标签「一人食」「独居」',k:'一人食'},
+{t:'通勤包里必备的十样东西',d:'开箱式清单，满足窥探欲与实用需求',r:'开箱题材天然吸睛，清单便于收藏',s:'平铺展示＋逐件说明使用场景',m:'1) 首图全部平铺 2) 每件讲一个具体场景 3) 标注品牌与价位 4) 问评论区还带什么',k:'通勤包 必备'},
+{t:'平价替代大牌的口红色号',d:'平替对比，帮用户省钱做决策',r:'省钱刚需＋对比图直观，转发率高',s:'一对一色号对照＋真实试色',m:'1) 首图做左右对比 2) 同一光线下试色 3) 标明相似度百分比 4) 诚实指出差异',k:'口红平替'},
+{t:'周末城市漫步路线',d:'City Walk 路线攻略，含地图与耗时',r:'轻旅行趋势＋本地生活，收藏后真会用',s:'路线可视化＋沿途出片点标注',m:'1) 首图放路线地图 2) 标注每段耗时 3) 推荐3个拍照机位 4) 附交通与餐饮建议',k:'citywalk 路线'},
+{t:'建立个人知识库的方法',d:'知识管理方法论，附可复制模板',r:'成长焦虑＋工具属性，长尾搜索稳定',s:'先讲框架再讲工具，避免工具党陷阱',m:'1) 首图放结构图 2) 讲清分类逻辑 3) 展示真实界面 4) 送模板换关注',k:'个人知识管理'},
+{t:'敏感肌换季护肤流程',d:'季节性护肤方案，强调精简与修护',r:'季节性痛点＋人群精准，每年复发的搜索需求',s:'流程化拆解＋成分说明',m:'1) 首图写「换季」「敏感肌」 2) 按早晚分流程 3) 说明每步的作用 4) 提醒建立耐受',k:'敏感肌 换季护肤'},
+{t:'租房水电燃气避坑指南',d:'实操型避坑清单，信息密度高',r:'高频踩坑场景，实用到会被主动搜索',s:'风险清单＋话术模板',m:'1) 首图写「避坑」和条数 2) 每条给具体金额或后果 3) 附与房东沟通话术 4) 提醒留存证据',k:'租房避坑'},
+{t:'副业第一个月赚了多少',d:'真实收益复盘，数据透明是核心',r:'收入类话题天然高点击，真实数据建立信任',s:'复盘体＋收益截图，坦诚讲坑',m:'1) 标题不夸大金额 2) 放真实后台截图 3) 拆解时间投入 4) 明确说明不适合谁',k:'副业 收入'},
+{t:'收纳到底该怎么开始',d:'从思路而非工具切入的收纳教程',r:'先讲「为什么」区别于同质化好物推荐',s:'原则先行＋分区实操',m:'1) 首图放前后对比 2) 先讲3条原则 3) 再分区域示范 4) 强调可维持性',k:'收纳 整理'},
+{t:'早C晚A到底怎么搭',d:'热门护肤概念的正确打开方式',r:'高热度关键词＋普遍误用，纠错型内容易火',s:'先纠误区再给方案',m:'1) 首图直接写「你可能搭错了」 2) 讲清成分冲突 3) 给阶梯式建议 4) 强调个体差异',k:'早C晚A'},
+{t:'一年读完52本书的方法',d:'阅读方法论，用数字建立可信度',r:'具体数字＋方法拆解，激励与实用并存',s:'目标拆解＋书单展示',m:'1) 首图放书墙或书单 2) 拆成每周一本的节奏 3) 讲清筛书标准 4) 附笔记模板',k:'阅读方法'},
+{t:'亚洲脸型的修容思路',d:'针对亚洲骨相的修容逻辑，非套模板',r:'人群精准＋纠正欧美教程水土不服',s:'骨相分析＋手法演示',m:'1) 首图做修容前后对比 2) 先讲骨相判断 3) 再给分脸型手法 4) 提醒宁淡勿浓',k:'修容 脸型'}
+],
+nutrient: [
+{a:'@成分实验室',t:'烟酰胺浓度越高越好？别被忽悠了',d:'讲清浓度与耐受度之间的真实关系',b:'用反直觉开头制造认知冲突，快速建立专业权威',f:'1) 从常见误区切入 2) 简短讲科学原理 3) 给具体浓度建议 4) 补个体差异免责说明',k:'烟酰胺 浓度'},
+{a:'@配方师张张',t:'敏感肌注意：这三种成分正在摧毁你的屏障',d:'避雷指南，直击敏感肌焦虑',b:'负面框架传播力更强，恐惧驱动分享与收藏',f:'1) 标题带数字 2) 放成分表截图佐证 3) 给替代方案 4) 引导关注拿完整清单',k:'敏感肌 成分避雷'},
+{a:'@护肤学生党',t:'视黄醇新手指南：0.1%→1% 进阶路径',d:'系统性教程，建立长期粉丝粘性',b:'阶梯式内容设计，用户跟着练会持续回访',f:'1) 先声明适用人群 2) 分阶段给浓度 3) 附浓度对比表 4) 评论区收集使用反馈',k:'视黄醇 新手'},
+{a:'@实验室阿宝',t:'自费买了20瓶美白精华，结果有点意外',d:'实证测评，用真实购买建立信任',b:'「自费」「20瓶」「意外」三个词最大化好奇心',f:'1) 封面摆全产品阵列 2) 正文逐个点评 3) 给性价比排名 4) 私信发完整报告',k:'美白精华 测评'},
+{a:'@成分党老狗',t:'30秒看懂成分表：怎么判断一瓶东西值不值',d:'工具型教程，提供可直接复用的判断方法',b:'低门槛高收益，「30秒学会」让用户觉得投入值得',f:'1) 第一步看排序规则 2) 第二步找核心成分 3) 第三步避开雷点 4) 做成收藏型长图',k:'成分表 解读'},
+{a:'@配方师张张',t:'水杨酸和果酸，到底该选哪个',d:'两类酸的适用场景对比',b:'选择困难是刚需，二选一结构清晰好读',f:'1) 先讲作用机制差异 2) 按肤质给建议 3) 讲清叠加禁忌 4) 附浓度参考',k:'水杨酸 果酸'},
+{a:'@成分实验室',t:'玻尿酸分子量的真相',d:'拆解营销话术背后的实际差别',b:'祛魅型内容，戳破话术能建立强信任',f:'1) 先列常见宣传语 2) 解释分子量到底影响什么 3) 给挑选建议 4) 不全盘否定保持客观',k:'玻尿酸 分子量'},
+{a:'@护肤学生党',t:'防晒霜 SPF 和 PA 的区别',d:'基础科普，覆盖最大范围的搜索需求',b:'常识型高频搜索，长尾流量稳定',f:'1) 一句话讲清两个指标 2) 按场景给选择 3) 讲用量与补涂 4) 做成可保存图卡',k:'防晒 SPF PA'},
+{a:'@实验室阿宝',t:'面膜天天敷会不会烂脸',d:'高频疑问的直接回答',b:'疑问句标题精准匹配搜索词',f:'1) 开头直接给结论 2) 解释过度水合原理 3) 给频次建议 4) 说明特殊时期例外',k:'面膜 频率'},
+{a:'@成分党老狗',t:'神经酰胺修护到底靠不靠谱',d:'成分单点深挖，讲清作用边界',b:'既讲有效也讲局限，反而更可信',f:'1) 讲屏障结构原理 2) 说明适用场景 3) 指出被夸大的部分 4) 给搭配建议',k:'神经酰胺'},
+{a:'@配方师张张',t:'刷酸之后为什么脸更糟了',d:'问题排查型内容，帮用户止损',b:'负面结果＋原因排查，痛点强烈',f:'1) 列出典型翻车症状 2) 逐条分析原因 3) 给急救方案 4) 讲重新建立耐受的节奏',k:'刷酸 烂脸'},
+{a:'@成分实验室',t:'抗氧化三剑客：VC、VE、阿魏酸',d:'组合成分科普，讲协同效应',b:'把零散知识整合成体系，收藏价值高',f:'1) 分别讲单一作用 2) 讲清协同机制 3) 说明稳定性问题 4) 给保存与使用建议',k:'维生素C 抗氧化'},
+{a:'@护肤学生党',t:'学生党百元内的成分好物',d:'预算限定＋成分导向的推荐',b:'预算锚定精准，人群明确',f:'1) 标题写死预算 2) 每款标核心成分与价格 3) 讲清取舍 4) 提醒先做小样测试',k:'百元护肤 成分'},
+{a:'@实验室阿宝',t:'氨基酸洗面奶真的更温和吗',d:'对常见认知的验证与补充',b:'验证型内容，满足求真心理',f:'1) 讲表活分类 2) 说明温和不等于洗得干净 3) 按肤质给建议 4) 教看成分表判断',k:'氨基酸洗面奶'},
+{a:'@成分党老狗',t:'精华叠涂的正确顺序',d:'操作型指南，解决日常实操困惑',b:'高频实操问题，看完立刻能用',f:'1) 讲质地由薄到厚原则 2) 列常见冲突组合 3) 给早晚分配方案 4) 强调不必堆太多',k:'精华 叠涂顺序'}
+]
+};
+
+var External = {
+  cycle: function(){ return Math.floor(Date.now() / ROTATE_MS); },
+
+  // 确定性轮换：同一时间片下，任何设备算出的结果完全一致
+  window: function(key){
+    var lib = LIB[key], len = lib.length, n = Math.min(SHOW_N, len);
+    var start = (this.cycle() * 3) % len, out = [];
+    for (var i = 0; i < n; i++) out.push(lib[(start + i) % len]);
+    return out;
+  },
+
+  douyinUrl: function(kw){ return 'https://www.douyin.com/search/' + encodeURIComponent(kw); },
+  xhsUrl: function(kw){ return 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(kw); },
+
+  esc: function(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; },
+
+  renderAll: function(){
+    this.renderDouyin();
+    this.renderXhs();
+    this.renderNutrient();
+    this.updateRotateBars();
+  },
+
+  renderDouyin: function(){
+    var list = this.window('douyin'), html = '', self = this;
+    for (var i = 0; i < list.length; i++){
+      var v = list[i], url = this.douyinUrl(v.k);
+      html += '<div class="content-card">'
+        + '<span class="tag tag-douyin">抖音选题 #' + (i + 1) + '</span>'
+        + '<h4>' + self.esc(v.t) + '</h4>'
+        + '<p>' + self.esc(v.d) + '</p>'
+        + '<div class="analysis"><strong>爆款原因：</strong>' + self.esc(v.r)
+        + '<br><strong>打法策略：</strong>' + self.esc(v.s)
+        + '<br><strong>可复制方法：</strong>' + self.esc(v.m) + '</div>'
+        + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
+        + '<div class="actions">'
+        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-douyin">🎬 在抖音搜这个选题</a>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
+        + '</div></div>';
+    }
+    document.getElementById('douyin-list').innerHTML = html;
+  },
+
+  renderXhs: function(){
+    var list = this.window('xhs'), html = '', self = this;
+    for (var i = 0; i < list.length; i++){
+      var v = list[i], url = this.xhsUrl(v.k);
+      html += '<div class="content-card">'
+        + '<span class="tag tag-xhs">小红书选题 #' + (i + 1) + '</span>'
+        + '<h4>' + self.esc(v.t) + '</h4>'
+        + '<p>' + self.esc(v.d) + '</p>'
+        + '<div class="analysis"><strong>爆款原因：</strong>' + self.esc(v.r)
+        + '<br><strong>打法策略：</strong>' + self.esc(v.s)
+        + '<br><strong>可复制方法：</strong>' + self.esc(v.m) + '</div>'
+        + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
+        + '<div class="actions">'
+        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-xhs">📕 在小红书搜这个选题</a>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
+        + '</div></div>';
+    }
+    document.getElementById('xhs-list').innerHTML = html;
+  },
+
+  renderNutrient: function(){
+    var list = this.window('nutrient'), html = '', self = this;
+    for (var i = 0; i < list.length; i++){
+      var v = list[i], url = this.xhsUrl(v.k);
+      html += '<div class="content-card">'
+        + '<span class="tag tag-lipline">成分党选题 #' + (i + 1) + '</span>'
+        + '<div style="font-size:11px;color:var(--text-s);margin-bottom:4px">对标博主：' + self.esc(v.a) + '</div>'
+        + '<h4>' + self.esc(v.t) + '</h4>'
+        + '<p>' + self.esc(v.d) + '</p>'
+        + '<div class="analysis"><strong>内容拆解：</strong>' + self.esc(v.b)
+        + '<br><strong>爆款公式：</strong>' + self.esc(v.f) + '</div>'
+        + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
+        + '<div class="actions">'
+        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-xhs">📕 在小红书搜这个选题</a>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
+        + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
+        + '</div></div>';
+    }
+    document.getElementById('nutrient-list').innerHTML = html;
+  },
+
+  fmt: function(ts){
+    var d = new Date(ts), now = new Date();
+    var hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    var sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return '今天 ' + hm;
+    var y = new Date(now.getTime() - 86400000);
+    if (d.toDateString() === y.toDateString()) return '昨天 ' + hm;
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hm;
+  },
+
+  updateRotateBars: function(){
+    var c = this.cycle();
+    var last = c * ROTATE_MS, next = (c + 1) * ROTATE_MS;
+    var mins = Math.max(0, Math.round((next - Date.now()) / 60000));
+    var left = mins >= 60 ? Math.floor(mins / 60) + ' 小时 ' + (mins % 60) + ' 分' : mins + ' 分钟';
+    var txt = '本轮选题更新于 <b>' + this.fmt(last) + '</b> · 距下次轮换 <b>' + left + '</b>';
+    ['douyin', 'xhs', 'nutrient'].forEach(function(k){
+      var el = document.getElementById(k + '-update');
+      if (el) el.innerHTML = txt;
+    });
+  },
+
+  // 手动刷新：重新按当前时间片渲染（不会伪造数据）
+  refresh: function(type){
+    var el = document.getElementById(type + '-list');
+    if (el){
+      el.style.opacity = '.4';
+      el.innerHTML = '<div style="text-align:center;padding:20px"><span class="loading-spinner"></span> 正在重新计算本轮选题...</div>';
+    }
+    var self = this;
+    setTimeout(function(){
+      if (type === 'douyin') self.renderDouyin();
+      else if (type === 'xhs') self.renderXhs();
+      else if (type === 'nutrient') self.renderNutrient();
+      self.updateRotateBars();
+      if (el) el.style.opacity = '1';
+    }, 350);
+  },
+
+  copyAnalysis: function(btn){
+    var card = btn.closest('.content-card');
+    var text = card.innerText.replace(/\n{3,}/g, '\n\n');
+    var done = function(){
+      var orig = btn.textContent;
+      btn.textContent = '已复制！';
+      setTimeout(function(){ btn.textContent = orig; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ alert(text); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch(e){ alert(text); }
+      document.body.removeChild(ta);
+    }
+  },
+
+  markSaved: function(btn){
+    var card = btn.closest('.content-card');
+    var title = card.querySelector('h4') ? card.querySelector('h4').textContent : '';
+    var store = loadStore();
+    if (!store.picks) store.picks = [];
+    if (!store.picks.some(function(p){ return p.title === title && !p.deleted; })){
+      store.picks.push({ id: Date.now(), title: title, at: new Date().toISOString(), updatedAt: Date.now() });
+      saveStore(store);
+    }
+    var orig = btn.textContent;
+    btn.textContent = '已收藏！';
+    btn.disabled = true;
+    setTimeout(function(){ btn.textContent = orig; btn.disabled = false; }, 1800);
+  }
+};
+
+// 每分钟刷新倒计时；跨过 6 小时时间片时自动重渲染
+var _lastCycle = External.cycle();
+setInterval(function(){
+  var c = External.cycle();
+  if (c !== _lastCycle){
+    _lastCycle = c;
+    External.renderAll();
+  } else {
+    External.updateRotateBars();
+  }
+}, 60000);
+
+// ===== 雅思训练（含听力音频 + 即时反馈）=====
+var IELTS_QUESTIONS={
+  listening:[
+    {q:'听录音，选择正确答案：\n"Now I\'d like to talk about the upcoming academic workshop on sustainable urban design..."',audioText:'Now I would like to talk about the upcoming academic workshop on sustainable urban design. The workshop will be held next Tuesday in the main lecture hall. Professor Williams will give a presentation on green building technologies.',passage:'Workshop Announcement: Sustainable Urban Design\n\nThe Academic Affairs Office would like to announce that the upcoming workshop on sustainable urban design will take place next Tuesday at 3pm in the Main Lecture Hall. Professor Williams from the Architecture Department will deliver the keynote presentation on green building technologies and their applications in modern city planning.\n\nKey topics include:\n- Energy-efficient building materials\n- Urban green space planning\n- Sustainable transportation systems\n- Case studies from Scandinavian cities\n\nAll students are welcome to attend. Please register through the student portal by Friday.',options:['A) Environmental science','B) Sustainable urban design','C) Language learning'],correct:'B',explanation:'讲座主题是"sustainable urban design"（可持续城市设计），对应选项B。'},
+    {q:'填空：听录音，选择正确的词完成句子\n"The lecture was ______ difficult that many students left early."',audioText:'I recently attended a lecture on advanced quantum physics. To be honest, the lecture was so difficult that many students left early. The professor spoke too fast and used complex terminology without explanation.',passage:'Fill in the blank:\n\n"I recently attended a lecture on advanced quantum physics. To be honest, the lecture was so difficult that many students left early. The professor spoke too fast and used complex terminology without explanation."',options:['A) so','B) such','C) very'],correct:'A',explanation:'so...that 固定搭配，so修饰形容词difficult。such后接名词短语。'},
+    {q:'多选题：听对话，选出 TWO 个正确答案\n"What TWO things does the student need to bring to the library?"',audioText:'Student: Excuse me, I need to borrow some books and study in the library. What do I need to bring?\nLibrarian: Well, you\'ll need your student ID card - that\'s essential. And you can rent a locker there if you want to store your belongings. But remember, food and drinks are not allowed inside the reading rooms.',passage:'Library Dialogue:\n\nStudent: Excuse me, I need to borrow some books and study in the library. What do I need to bring?\nLibrarian: Well, you\'ll need your student ID card - that\'s essential. And you can rent a locker there if you want to store your belongings. But remember, food and drinks are not allowed inside the reading rooms.',options:['A) Student ID card','B) A backpack','C) A locker rental key','D) Food and water'],correct:'A,C',explanation:'Librarian提到两样东西：student ID card（必需）和locker rental（可选储物柜）。Food/drink被明确禁止。'}
+  ],
+  speaking:[
+    {part:'Part 1',q:'Do you like reading?',modelAnswer:"I'd say yes, although I prefer audiobooks lately. They fit better into my daily commute on the subway. Reading physical books at home is more of a weekend ritual for me - I find it helps me unwind after a busy week.",tips:'结构：直接观点 → 补充偏好细节 → 解释原因。使用连接词（although, but）。避免简单Yes/No。词汇亮点：commute, unwind, ritual。'},
+    {part:'Part 2',q:'Describe a book that influenced you.\nPrepare 1 minute, speak for 2 minutes.',modelAnswer:'I would like to talk about "Atomic Habits" by James Clear, which had a profound impact on my daily routine. I first encountered this book about two years ago when I was struggling to establish a consistent exercise habit.\n\nWhat made this book stand out was its practical approach. Rather than relying on motivation, Clear argues that small changes compound over time. The concept of "habit stacking" - linking a new habit to an existing one - completely changed how I think about behavior change.\n\nThe reason this book influenced me so significantly is that it provided a scientific framework for something I had always found mysterious. Before reading it, I blamed my lack of discipline. Afterward, I realized I had been approaching habit formation backwards.\n\nIn conclusion, this book transformed my understanding of personal development and I would highly recommend it to anyone looking to make positive changes in their life.',tips:'结构：Introduction(what) → Background(why important) → Specific details(example) → Conclusion(effect)。使用过去时叙述经历，现在时表达影响。高分词汇：profound impact, compound, framework, backwards。'},
+    {part:'Part 3',q:'Do you think technology has changed the way people learn?',modelAnswer:'Absolutely. Technology has fundamentally transformed education in several ways. Firstly, the accessibility of information has improved dramatically - students can now access academic journals, online courses, and educational videos from anywhere in the world. Secondly, interactive learning platforms have made education more engaging through gamification and personalized feedback. However, I would argue that while technology provides tools, the fundamental skills of critical thinking and discipline remain unchanged.',tips:'结构：观点陈述 → 理由一（accessibility）→ 理由二（interactivity）→ 反驳/平衡观点。使用连接词（firstly, secondly, however）。词汇亮点：fundamentally, accessibility, gamification, discipline。'}
+  ],
+  reading:[
+    {q:'Read the passage and decide if the statement is True, False, or Not Given:\n\n"Cognitive load theory suggests that working memory has a limited capacity. When learners are presented with too much information simultaneously, their ability to process and retain new material is significantly impaired."\n\nStatement: Working memory can hold unlimited information.',passage:'Cognitive Load Theory in Educational Psychology\n\nCognitive load theory, developed by John Sweller in the late 1980s, is based on the premise that human working memory has severely limited capacity. Research has consistently shown that working memory can only hold approximately 7±2 chunks of information at any one time. When learners are presented with information that exceeds this capacity - known as cognitive overload - their ability to process, understand, and retain new material is significantly impaired.\n\nThere are three types of cognitive load:\nintrinsic load, which is determined by the inherent complexity of the material;\nextraneous load, which results from poor instructional design;\nand germane load, which refers to the mental effort devoted to creating permanent schemas.\n\nEffective teaching should aim to minimize extraneous load while managing intrinsic load and maximizing germane load.',options:['True','False','Not Given'],correct:'False',explanation:'原文说工作记忆容量有限（limited capacity，约7±2个信息组块），题目说可以容纳无限信息，与原文矛盾，所以是False。'},
+    {q:'Matching: Match the researcher with their contribution:\n\n1. John Sweller\n2. Baddeley\n3. Miller',passage:'History of Cognitive Psychology\n\nJohn Sweller developed Cognitive Load Theory in 1988, focusing on how the structure of instructional materials affects learning. Alan Baddeley expanded on working memory models, proposing the multicomponent model that includes the phonological loop, visuospatial sketchpad, and episodic buffer. George Miller published his famous paper "The Magical Number Seven, Plus or Minus Two" in 1956, establishing the limited capacity of short-term memory.',options:{1:'A) Working memory model with episodic buffer',2:'B) Cognitive Load Theory',3:'C) Magical number 7±2'},correct:{1:'B',2:'A',3:'C'},explanation:'Sweller→认知负荷理论(B)，Baddeley→工作记忆模型含情景缓冲(A)，Miller→神奇的数字7±2(C)。'}
+  ],
+  writing:[
+    {type:'Task 1',q:'The chart below shows the percentage of households owning various electronic devices in the UK from 2010 to 2020.\n\nSummarize the information by selecting and reporting the main features, and make comparisons where relevant.',template:'Introduction: Paraphrase the question\nOverview: Summarize 2-3 main trends\nBody Paragraph 1: Detailed data for one category\nBody Paragraph 2: Detailed data for another category + comparisons',tips:'开头改写题目（同义词替换）。Overview段不加具体数据，只概括主要趋势。使用比较级和最高级。字数150字以上。'},
+    {type:'Task 2',q:'Some people believe that university education should be free for all students. Others argue that students should pay for their own education.\n\nDiscuss both views and give your opinion.',template:'Introduction: Paraphrase + state position\nBody 1: View A + supporting points\nBody 2: View B + supporting points\nConclusion: Restate opinion + summarize',tips:'开头改写题目并表明立场。两段分别讨论两种观点。结尾重申观点。使用连接词（on the one hand, furthermore, in conclusion）。字数250字以上。'}
+  ]
+};
+
+// ===== 雅思答题 =====
+var IELTS={
+  currentType:null,currentIndex:0,score:{listening:0,speaking:0,reading:0,writing:0},attempts:{listening:0,speaking:0,reading:0,writing:0},currentAnswer:null,
+  audioState:'idle',
+  synth:null,
+
+  init:function(){
+    if('speechSynthesis' in window){
+      this.synth=window.speechSynthesis;
+      var self=this;
+      if(this.synth.onvoiceschanged !== undefined){
+        this.synth.onvoiceschanged=function(){self.synth.getVoices();};
+      }
+    }
+  },
+
+  start:function(type){
+    this.currentType=type;
+    this.currentIndex=0;
+    this.score[type]=0;
+    this.attempts[type]=0;
+    this.audioState='idle';
+    this.showQuestion();
+  },
+
+  showQuestion:function(){
+    var q=IELTS_QUESTIONS[this.currentType][this.currentIndex];
+    if(!q){this.showCompletion();return;}
+    var area=document.getElementById('ielts-quiz-area');
+    var title=document.getElementById('ielts-quiz-title');
+    var content=document.getElementById('ielts-quiz-content');
+    var feedback=document.getElementById('ielts-feedback');
+    var submitBtn=document.getElementById('ielts-submit-btn');
+    area.style.display='block';
+    feedback.style.display='none';
+    feedback.className='ielts-feedback';
+    submitBtn.style.display='none';
+    this.currentAnswer=null;
+    this.audioState='idle';
+
+    if(this.currentType==='listening'){
+      title.textContent='🎧 听力练习 - 第'+(this.currentIndex+1)+'题';
+      var html='';
+      html+='<div class="ielts-audio-bar">';
+      html+='<button class="play-btn" onclick="IELTS.toggleAudio()" id="play-btn">▶</button>';
+      html+='<div><div class="audio-label" id="audio-label">点击播放音频</div><div class="audio-sub" id="audio-sub">雅思听力模拟题</div></div>';
+      html+='</div>';
+      html+='<div style="font-size:14px;line-height:1.8;margin-bottom:14px;background:var(--card-alt);padding:12px;border-radius:10px">'+this.escHtml(q.q)+'</div>';
+      if(q.passage){
+        html+='<details style="margin-bottom:14px"><summary style="font-size:12px;color:var(--accent-bl);cursor:pointer;font-weight:600">📄 查看听力原文</summary><div style="font-size:12px;line-height:1.8;color:var(--text-s);padding:10px;background:var(--bg);border-radius:8px;margin-top:6px">'+this.escHtml(q.passage)+'</div></details>';
+      }
+      for(var i=0;i<q.options.length;i++){
+        html+='<button class="ielts-opt" id="opt-'+i+'" onclick="IELTS.selectOpt('+i+',\''+q.options[i].charAt(0)+'\')">'+q.options[i]+'</button>';
+      }
+      content.innerHTML=html;
+      submitBtn.style.display='block';
+
+    }else if(this.currentType==='speaking'){
+      title.textContent='🎤 口语练习 - '+q.part;
+      var html='<div class="speaking-card"><div class="q-label">'+q.part+' 练习</div><div class="q-text">'+q.q+'</div>';
+      html+='<button class="btn btn-blue" style="margin-bottom:12px" onclick="IELTS.speakModelAnswer()">🔊 收听示范发音</button>';
+      html+='<div class="answer-box" id="model-answer-'+this.currentIndex+'">'+q.modelAnswer+'</div>';
+      html+='<button class="btn btn-outline" style="margin-top:8px" onclick="IELTS.toggleModelAnswer('+this.currentIndex+')">📝 查看参考答案</button>';
+      html+='<div class="tip-box">💡 '+q.tips+'</div></div>';
+      content.innerHTML=html;
+
+    }else if(this.currentType==='reading'){
+      title.textContent='📖 阅读练习 - 第'+(this.currentIndex+1)+'题';
+      var html='<div style="font-size:13px;line-height:1.8;margin-bottom:14px;background:var(--card-alt);padding:12px;border-radius:10px">'+this.escHtml(q.passage)+'</div>';
+      html+='<div style="font-size:14px;line-height:1.8;margin-bottom:14px">'+this.escHtml(q.q)+'</div>';
+      if(q.options){
+        for(var i=0;i<q.options.length;i++){
+          html+='<button class="ielts-opt" id="opt-'+i+'" onclick="IELTS.selectOpt('+i+',\''+q.options[i]+'\')">'+q.options[i]+'</button>';
+        }
+      }
+      content.innerHTML=html;
+      submitBtn.style.display='block';
+
+    }else if(this.currentType==='writing'){
+      title.textContent='✍️ 写作练习 - '+q.type;
+      var html='<div style="font-size:14px;line-height:1.8;margin-bottom:14px;padding:14px;background:var(--card-alt);border-radius:10px">'+this.escHtml(q.q)+'</div>';
+      html+='<div style="margin-bottom:14px"><div class="card-title">写作模板</div><div style="font-size:13px;line-height:1.8;background:var(--bg);padding:12px;border-radius:8px">'+this.escHtml(q.template)+'</div></div>';
+      html+='<div style="margin-bottom:14px"><div class="card-title">写作技巧</div><div style="font-size:13px;line-height:1.8;color:var(--text-s)">'+this.escHtml(q.tips)+'</div></div>';
+      html+='<textarea id="writing-answer" placeholder="在此输入你的作文..." style="width:100%;height:150px;padding:12px;border-radius:10px;border:1.5px solid rgba(155,139,126,.25);background:var(--white);resize:none;font-size:13px;line-height:1.7"></textarea>';
+      html+='<button class="btn btn-primary btn-block mt-12" onclick="IELTS.checkWriting()">📝 检查我的作文</button>';
+      content.innerHTML=html;
+    }
+    this._updatePlayButton();
+  },
+
+  toggleAudio:function(){
+    if(!this.synth)return;
+    
+    if(this.audioState==='idle'||this.audioState==='paused'){
+      if(this.audioState==='paused'){
+        this.synth.resume();
+        this.audioState='playing';
+      }else{
+        var q=IELTS_QUESTIONS.listening[this.currentIndex]||IELTS_QUESTIONS.listening[0];
+        var text=q.audioText||q.passage||'';
+        var utter=new SpeechSynthesisUtterance(text);
+        utter.lang='en-US';
+        utter.rate=0.85;
+        utter.pitch=1;
+        var voices=this.synth.getVoices();
+        var enVoice=voices.find(function(v){return v.lang.startsWith('en-US')||v.lang.startsWith('en-GB');});
+        if(enVoice)utter.voice=enVoice;
+        
+        var self=this;
+        utter.onend=function(){self.audioState='idle';self._updatePlayButton();};
+        utter.onerror=function(){self.audioState='idle';self._updatePlayButton();};
+        
+        this.synth.speak(utter);
+        this.audioState='playing';
+      }
+    }else if(this.audioState==='playing'){
+      this.synth.pause();
+      this.audioState='paused';
+    }
+    this._updatePlayButton();
+  },
+
+  _updatePlayButton:function(){
+    var btn=document.getElementById('play-btn');
+    var label=document.getElementById('audio-label');
+    var sub=document.getElementById('audio-sub');
+    if(!btn)return;
+    
+    if(this.audioState==='playing'){
+      btn.textContent='⏸';
+      btn.classList.add('playing');
+      if(label)label.textContent='正在播放...';
+      if(sub)sub.textContent='点击暂停';
+    }else if(this.audioState==='paused'){
+      btn.textContent='▶';
+      btn.classList.remove('playing');
+      if(label)label.textContent='已暂停 - 点击继续';
+      if(sub)sub.textContent='雅思听力模拟题';
+    }else{
+      btn.textContent='▶';
+      btn.classList.remove('playing');
+      if(label)label.textContent='点击播放音频';
+      if(sub)sub.textContent='雅思听力模拟题';
+    }
+  },
+
+  selectOpt:function(idx,val){
+    var q=IELTS_QUESTIONS[this.currentType][this.currentIndex];
+    document.querySelectorAll('.ielts-opt').forEach(function(o){o.classList.remove('selected');});
+    var opt=document.getElementById('opt-'+idx);
+    if(opt)opt.classList.add('selected');
+    this.currentAnswer=val;
+  },
+
+  submitAnswer:function(){
+    if(!this.currentAnswer){alert('请先选择一个答案');return;}
+    var q=IELTS_QUESTIONS[this.currentType][this.currentIndex];
+    this.attempts[this.currentType]++;
+    var isCorrect=this.currentAnswer===q.correct;
+    if(isCorrect)this.score[this.currentType]++;
+
+    document.querySelectorAll('.ielts-opt').forEach(function(opt){
+      opt.classList.remove('selected');
+      opt.style.pointerEvents='none';
+      var optLetter=opt.textContent.charAt(0);
+      var correctVal=q.correct;
+      if(typeof correctVal==='object' && correctVal!=null){
+        if(correctVal[optLetter]){opt.classList.add('correct');}
+      }else{
+        if(optLetter===String(correctVal)){opt.classList.add('correct');}
+      }
+      if(optLetter===this.currentAnswer&&!isCorrect){opt.classList.add('wrong');}
+    }.bind(this));
+
+    var fb=document.getElementById('ielts-feedback');
+    fb.style.display='block';
+    fb.className='ielts-feedback '+(isCorrect?'correct':'wrong');
+    var correctDisplay=q.correct;
+    if(typeof correctDisplay==='object'){
+      var parts=[];for(var k in correctDisplay){if(correctDisplay[k])parts.push(k);}
+      correctDisplay=parts.join(',');
+    }
+    fb.innerHTML=(isCorrect?'✓ <b>回答正确！</b>':'✗ <b>回答错误</b><br>正确答案是 <b>'+correctDisplay+'</b>')+'<br>'+q.explanation;
+
+    var self=this;
+    setTimeout(function(){self.currentIndex++;self.showQuestion();},4000);
+  },
+
+  toggleModelAnswer:function(idx){
+    var el=document.getElementById('model-answer-'+idx);
+    if(el){el.style.display=el.style.display==='none'?'block':'none';}
+  },
+
+  speakModelAnswer:function(){
+    if(!this.synth)return;
+    this.synth.cancel();
+    var q=IELTS_QUESTIONS.speaking[this.currentIndex]||IELTS_QUESTIONS.speaking[0];
+    var utter=new SpeechSynthesisUtterance(q.modelAnswer);
+    utter.lang='en-US';
+    utter.rate=0.9;
+    var voices=this.synth.getVoices();
+    var enVoice=voices.find(function(v){return v.lang.startsWith('en');});
+    if(enVoice)utter.voice=enVoice;
+    this.synth.speak(utter);
+  },
+
+  checkWriting:function(){
+    var answer=document.getElementById('writing-answer').value.trim();
+    if(!answer){alert('请先填写你的作文');return;}
+    var fb=document.getElementById('ielts-feedback');
+    var wordCount=answer.split(/\s+/).length;
+    fb.style.display='block';
+    fb.className='ielts-feedback correct';
+    fb.innerHTML='📝 <b>字数统计：'+wordCount+' 词</b><br>'+
+      (wordCount>=150?'✓ 达到Task 1最低字数要求（150词）':'⚠️ 字数不足150词，建议扩充内容')+'<br><br>'+
+      '💡 <b>自我检查清单：</b><br>'+
+      '✓ 是否有清晰的引言段？<br>'+
+      '✓ 是否概括了主要趋势？<br>'+
+      '✓ 是否使用了数据支持？<br>'+
+      '✓ 是否有比较和对比？<br>'+
+      '✓ 语法和拼写是否正确？';
+  },
+
+  showCompletion:function(){
+    var area=document.getElementById('ielts-quiz-area');
+    var title=document.getElementById('ielts-quiz-title');
+    var content=document.getElementById('ielts-quiz-content');
+    var feedback=document.getElementById('ielts-feedback');
+    var submitBtn=document.getElementById('ielts-submit-btn');
+    area.style.display='block';
+    feedback.style.display='none';
+    submitBtn.style.display='none';
+    title.textContent='🎉 本模块完成！';
+    var acc=this.getAccuracy();
+    content.innerHTML='<div class="empty-state"><div class="emoji">🏆</div><p>做得好！正确率 <b style="color:var(--accent-gr);font-size:24px">'+acc+'%</b></p>'+
+      '<button class="btn btn-primary mt-12" onclick="IELTS.start(\''+this.currentType+'\')">🔄 重新开始</button>'+
+      '<button class="btn btn-outline mt-8" onclick="IELTS.renderProgress();switchPage(\'internal\')">← 返回</button></div>';
+    this.renderProgress();
+  },
+
+  getAccuracy:function(){var a=this.attempts[this.currentType]||0;if(!a)return 0;return Math.round((this.score[this.currentType]||0)/a*100);},
+  typeLabel:function(t){return{listening:'听力',speaking:'口语',reading:'阅读',writing:'写作'}[t]||t;},
+  renderProgress:function(){
+    ['listening','speaking','reading','writing'].forEach(function(t){
+      var acc=IELTS.getAccuracyForType(t);
+      var prog=document.getElementById('prog-'+t);
+      var score=document.getElementById('score-'+t);
+      if(prog)prog.style.width=acc+'%';
+      if(score)score.textContent=acc+'%';
+    });
+  },
+  getAccuracyForType:function(t){var a=this.attempts[t]||0;if(!a)return 0;return Math.round((this.score[t]||0)/a*100);},
+  escHtml:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+};
+
+// 初始化语音合成
+IELTS.init();
+
+// ===== 阅读列表 =====
+var ReadingModal={open:function(){document.getElementById('book-title').value='';document.getElementById('book-author').value='';document.getElementById('book-status').value='want';document.getElementById('book-note').value='';openModal('modal-reading');},save:function(){var title=document.getElementById('book-title').value.trim();if(!title){alert('请输入书名');return;}var store=loadStore();if(!store.books)store.books=[];store.books.push({id:Date.now(),title:title,author:document.getElementById('book-author').value.trim(),status:document.getElementById('book-status').value,note:document.getElementById('book-note').value.trim()});saveStore(store);closeModal('modal-reading');ReadingList.render();}};
+var ReadingList={render:function(){var store=loadStore();var books=live(store.books);var el=document.getElementById('reading-list');var empty=document.getElementById('reading-empty');if(!books.length){el.innerHTML='';empty.style.display='';return;}empty.style.display='none';var colors={want:'var(--accent-bl)',reading:'var(--accent-w)',done:'var(--accent-gr)'};var labels={want:'想读',reading:'在读',done:'读完'};var html='';for(var i=books.length-1;i>=0;i--){var b=books[i];html+='<div class="book-item"><div class="book-cover" style="background:'+colors[b.status]+'22;font-size:24px">📖</div><div class="book-info"><h4>'+this.escHtml(b.title)+'</h4><p>'+this.escHtml(b.author||'未知')+'</p><div class="book-status" style="color:'+colors[b.status]+'">● '+labels[b.status]+'</div>'+(b.note?'<div style="font-size:11px;color:var(--text-s);margin-top:4px">'+this.escHtml(b.note).slice(0,60)+'...</div>':'')+'</div><button class="task-del" onclick="ReadingList.del('+b.id+')">×</button></div>';}el.innerHTML=html;},escHtml:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}};
+ReadingList.del=function(id){softDelete('books',id);ReadingList.render();};
+
+// ===== 初始化 =====
+renderAll();
+External.renderAll();
+IELTS.renderProgress();
+Sync.init();
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+</script>
+</body>
+</html>
