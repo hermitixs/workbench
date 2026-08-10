@@ -1,0 +1,6 @@
+# 本地/临时文件，不部署到 GitHub Pages
+*.bak-*
+工作台/
+server.js
+start.bat
+.DS_Store
