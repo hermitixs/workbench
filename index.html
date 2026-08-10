@@ -118,6 +118,24 @@ input,textarea,select{font:inherit;color:inherit}
 .jump-link:active{opacity:.7}
 .jump-douyin{background:rgba(255,50,80,.12);color:#FF3250}
 .jump-xhs{background:rgba(255,60,60,.12);color:#FF3232}
+.case-toggle{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 10px;background:var(--card-alt);border-radius:10px;font-size:12px;font-weight:600;color:var(--text-p);cursor:pointer}
+.case-toggle:active{opacity:.7}
+.case-toggle b{color:var(--accent-w);margin:0 2px}
+.case-caret{color:var(--text-s);font-size:11px}
+.case-wrap{margin-top:8px}
+.case-card{background:var(--card-alt);border-radius:10px;padding:10px;margin-bottom:8px}
+.case-head{display:flex;align-items:center;gap:6px}
+.case-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;flex-shrink:0}
+.case-video{background:rgba(255,50,80,.15);color:#FF3250}
+.case-img{background:rgba(143,163,176,.2);color:var(--accent-bl)}
+.case-title{flex:1;font-size:12px;font-weight:600;color:var(--text-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.case-edit,.case-del{border:none;background:transparent;font-size:13px;cursor:pointer;padding:2px 4px;line-height:1}
+.case-edit{color:var(--primary)}
+.case-del{color:var(--accent-ro)}
+.case-body{margin-top:6px;font-size:11.5px;line-height:1.65;color:var(--text)}
+.case-line{margin-bottom:4px}
+.case-k{color:var(--text-p);font-weight:600}
+.case-add{font-size:12px;color:var(--primary)}
 .skill-card{display:flex;align-items:center;gap:14px;padding:14px;background:var(--card);border-radius:var(--radius);margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
 .skill-card:active{transform:scale(.98)}
 .skill-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
@@ -345,6 +363,8 @@ input,textarea,select{font:inherit;color:inherit}
   </div></div>
 
   <div class="modal-overlay" id="modal-reading"><div class="modal"><div class="modal-handle"></div><h3>添加书籍</h3><div class="field"><label>书名</label><input type="text" id="book-title" placeholder="输入书名"></div><div class="field"><label>作者</label><input type="text" id="book-author" placeholder="输入作者"></div><div class="field"><label>状态</label><select id="book-status"><option value="want">想读</option><option value="reading">在读</option><option value="done">读完</option></select></div><div class="field"><label>笔记（可选）</label><textarea id="book-note" placeholder="阅读时做的笔记..."></textarea></div><button class="btn btn-primary btn-block" onclick="ReadingModal.save()">保存书籍</button></div></div>
+
+  <div class="modal-overlay" id="modal-case"><div class="modal"><div class="modal-handle"></div><h3 id="case-modal-title">添加爆款案例</h3><div class="field"><label>类型</label><select id="case-media"><option value="video">🎬 视频</option><option value="img">📕 图文</option></select></div><div class="field"><label>案例标题</label><input type="text" id="case-title" placeholder="如：跟拍版 / 拆解版 / 合集"></div><div class="field"><label>跳转链接（平台搜索或真实视频/笔记链接）</label><input type="text" id="case-url" placeholder="https://..."></div><div class="field"><label>内容拆解</label><textarea id="case-breakdown" placeholder="这条爆款讲了什么、怎么拍/写的、亮点在哪..."></textarea></div><div class="field"><label>出圈逻辑（图文 / 视频）</label><textarea id="case-logic" placeholder="它为什么火、情绪钩子、可复制的点..."></textarea></div><button class="btn btn-primary btn-block" onclick="External.saveCase()">保存案例</button></div></div>
 </div>
 <script>
 // ===== 存储 + 双端云同步 =====
@@ -971,6 +991,151 @@ var External = {
 
   esc: function(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; },
 
+  // ===== 爆款案例（挂在每个选题下，存进主 store 随同步走）=====
+  platformSearch: function(platform, k){
+    k = k || '';
+    return platform === 'douyin'
+      ? 'https://www.douyin.com/search/' + encodeURIComponent(k)
+      : 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(k);
+  },
+
+  buildSeedCases: function(platform, topic){
+    var k = topic.k || '', t = topic.t || '';
+    var url = this.platformSearch(platform, k);
+    var hook = topic.r || topic.b || '';
+    var exec = topic.s || topic.f || '';
+    var method = topic.m || topic.f || '';
+    return [
+      { id: 'seed_' + platform + '_' + k + '_v', media: 'video', title: '视频跟拍版｜' + t, url: url,
+        breakdown: (platform === 'nutrient' ? '内容拆解：' : '爆款原因：') + hook + '。执行上' + exec + '。',
+        logic: '视频出圈逻辑：前3秒用强冲突/强反差留住人，中段给足信息密度，结尾抛互动钩子拉评论；节奏快、字幕大、BGM贴合情绪，完播率与互动率双高。' },
+      { id: 'seed_' + platform + '_' + k + '_i', media: 'img', title: '图文拆解版｜' + t, url: url,
+        breakdown: '可复制方法：' + method + '。',
+        logic: '图文出圈逻辑：首图信息密度高、结论前置，正文用编号/对比/清单体降低阅读成本；封面大字突出核心利益点，评论区主动留钩子引导收藏转发。' }
+    ];
+  },
+
+  getCases: function(platform, topic){
+    var store = loadStore();
+    if (!store.cases) store.cases = {};
+    var key = platform + '|' + (topic.k || '');
+    if (!store.cases[key]){
+      store.cases[key] = this.buildSeedCases(platform, topic);
+      saveStore(store, { silent: true });
+    }
+    return store.cases[key];
+  },
+
+  readCases: function(platform, k){
+    var store = loadStore();
+    if (!store.cases) store.cases = {};
+    var key = platform + '|' + k;
+    if (!store.cases[key]) store.cases[key] = this.buildSeedCases(platform, { k: k });
+    return store.cases[key];
+  },
+
+  writeCases: function(platform, k, arr){
+    var store = loadStore();
+    if (!store.cases) store.cases = {};
+    store.cases[platform + '|' + k] = arr;
+    saveStore(store);
+  },
+
+  caseSectionHTML: function(platform, topic){
+    var cases = this.getCases(platform, topic), self = this;
+    var h = '<div class="case-toggle" onclick="External.toggleCases(this)">'
+      + '<span>🔥 爆款案例 <b>' + cases.length + '</b></span>'
+      + '<span class="case-caret">▾</span></div>'
+      + '<div class="case-wrap" style="display:none">';
+    if (!cases.length){
+      h += '<div style="font-size:11px;color:var(--text-s);padding:6px 2px">暂无案例，点下面添加</div>';
+    }
+    for (var j = 0; j < cases.length; j++){
+      var c = cases[j], isVid = c.media === 'video';
+      h += '<div class="case-card">'
+        + '<div class="case-head">'
+        + '<span class="case-badge ' + (isVid ? 'case-video' : 'case-img') + '">' + (isVid ? '🎬 视频' : '📕 图文') + '</span>'
+        + '<span class="case-title">' + self.esc(c.title) + '</span>'
+        + '<button class="case-edit" onclick="External.editCase(' + JSON.stringify(platform) + ',' + JSON.stringify(topic.k) + ',' + j + ')">✎</button>'
+        + '<button class="case-del" onclick="External.delCase(' + JSON.stringify(platform) + ',' + JSON.stringify(topic.k) + ',' + j + ')">🗑</button>'
+        + '</div>'
+        + '<div class="case-body">'
+        + '<div class="case-line"><span class="case-k">内容拆解：</span>' + self.esc(c.breakdown) + '</div>'
+        + '<div class="case-line"><span class="case-k">出圈逻辑：</span>' + self.esc(c.logic) + '</div>'
+        + '</div>'
+        + '<a class="jump-link ' + (platform === 'douyin' ? 'jump-douyin' : 'jump-xhs') + '" href="' + self.esc(c.url) + '" target="_blank" rel="noopener" style="margin-top:8px;font-size:11px">🔗 去平台看这个爆款</a>'
+        + '</div>';
+    }
+    h += '<button class="btn btn-outline case-add" style="width:100%;margin-top:4px" onclick="External.addCase(' + JSON.stringify(platform) + ',' + JSON.stringify(topic.k) + ')">＋ 添加爆款案例</button>';
+    h += '</div>';
+    return h;
+  },
+
+  toggleCases: function(btn){
+    var wrap = btn.nextElementSibling;
+    if (wrap && wrap.classList.contains('case-wrap')){
+      var hidden = wrap.style.display === 'none';
+      wrap.style.display = hidden ? 'block' : 'none';
+      var caret = btn.querySelector('.case-caret');
+      if (caret) caret.textContent = hidden ? '▴' : '▾';
+    }
+  },
+
+  addCase: function(platform, k){
+    this.editing = { platform: platform, k: k, index: -1 };
+    this.openCaseModal('添加爆款案例', { media: 'video', title: '', url: this.platformSearch(platform, k), breakdown: '', logic: '' });
+  },
+
+  editCase: function(platform, k, index){
+    var cases = this.readCases(platform, k), c = cases[index];
+    if (!c) return;
+    this.editing = { platform: platform, k: k, index: index };
+    this.openCaseModal('编辑爆款案例', c);
+  },
+
+  openCaseModal: function(title, c){
+    document.getElementById('case-modal-title').textContent = title || '添加爆款案例';
+    document.getElementById('case-media').value = c.media || 'video';
+    document.getElementById('case-title').value = c.title || '';
+    document.getElementById('case-url').value = c.url || '';
+    document.getElementById('case-breakdown').value = c.breakdown || '';
+    document.getElementById('case-logic').value = c.logic || '';
+    openModal('modal-case');
+  },
+
+  saveCase: function(){
+    if (!this.editing) return;
+    var p = this.editing.platform, k = this.editing.k, idx = this.editing.index;
+    var cases = this.readCases(p, k);
+    var obj = {
+      id: (idx >= 0 && cases[idx] && cases[idx].id) ? cases[idx].id : 'c_' + Date.now(),
+      media: document.getElementById('case-media').value,
+      title: document.getElementById('case-title').value.trim() || '未命名案例',
+      url: document.getElementById('case-url').value.trim(),
+      breakdown: document.getElementById('case-breakdown').value.trim(),
+      logic: document.getElementById('case-logic').value.trim()
+    };
+    if (!obj.url) obj.url = this.platformSearch(p, k);
+    if (idx >= 0) cases[idx] = obj; else cases.push(obj);
+    this.writeCases(p, k, cases);
+    closeModal('modal-case');
+    this.rerender(p);
+  },
+
+  delCase: function(platform, k, index){
+    if (!confirm('删除这条爆款案例？')) return;
+    var cases = this.readCases(platform, k);
+    cases.splice(index, 1);
+    this.writeCases(platform, k, cases);
+    this.rerender(platform);
+  },
+
+  rerender: function(platform){
+    if (platform === 'douyin') this.renderDouyin();
+    else if (platform === 'xhs') this.renderXhs();
+    else if (platform === 'nutrient') this.renderNutrient();
+  },
+
   renderAll: function(){
     this.renderDouyin();
     this.renderXhs();
@@ -995,7 +1160,7 @@ var External = {
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px;color:#9B8B7E;border-color:#9B8B7E" onclick="AI.genForCard(this)">✨ AI</button>'
-        + '</div></div>';
+        + '</div>' + self.caseSectionHTML('douyin', v) + '</div>';
     }
     document.getElementById('douyin-list').innerHTML = html;
   },
@@ -1017,7 +1182,7 @@ var External = {
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px;color:#9B8B7E;border-color:#9B8B7E" onclick="AI.genForCard(this)">✨ AI</button>'
-        + '</div></div>';
+        + '</div>' + self.caseSectionHTML('xhs', v) + '</div>';
     }
     document.getElementById('xhs-list').innerHTML = html;
   },
@@ -1039,7 +1204,7 @@ var External = {
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px;color:#9B8B7E;border-color:#9B8B7E" onclick="AI.genForCard(this)">✨ AI</button>'
-        + '</div></div>';
+        + '</div>' + self.caseSectionHTML('nutrient', v) + '</div>';
     }
     document.getElementById('nutrient-list').innerHTML = html;
   },
