@@ -585,7 +585,7 @@ var Sync = {
     this.pull(true).then(function(ok){
       SyncUI.paintPanel(); self.paint();
       if (ok){ alert('配对成功，数据已合并。'); self.push(); }
-      else alert('已保存同步码，但云端暂时没读到数据。可以在另一台设备点「立即上传」后，这边再点「立即拉取」。');
+      else alert('同步失败：' + (self.lastErr || '未知错误') + '\n\n如果提示网络/连接类错误，说明手机网络连不上同步服务器，需要更换为国内可访问的服务器。');
       if (!self.pollTimer){
         self.pollTimer = setInterval(function(){ if (!document.hidden) self.pull(false); }, 60000);
       }
