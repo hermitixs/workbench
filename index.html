@@ -285,18 +285,30 @@ input,textarea,select{font:inherit;color:inherit}
   <div class="modal-overlay" id="modal-task"><div class="modal"><div class="modal-handle"></div><h3>每日委托</h3><div class="field"><label>任务内容</label><input type="text" id="task-input" placeholder="输入任务..." maxlength="100"></div><div class="field"><label>优先级</label><select id="task-priority"><option value="high">高</option><option value="medium" selected>中</option><option value="low">低</option></select></div><button class="btn btn-primary btn-block" onclick="TaskModal.save()">保存任务</button></div></div>
   <div class="modal-overlay" id="modal-expense"><div class="modal"><div class="modal-handle"></div><h3>记录消费</h3><div class="field"><label>日期</label><input type="text" id="expense-date" readonly style="background:var(--card-alt)"></div><div class="field"><label>消费内容</label><input type="text" id="expense-name" placeholder="如：午餐"></div><div class="field"><label>金额（元）</label><input type="number" id="expense-amt" placeholder="0.00" min="0" step="0.01"></div><div class="field"><label>分类</label><select id="expense-cat"><option value="餐饮">餐饮</option><option value="交通">交通</option><option value="购物">购物</option><option value="娱乐">娱乐</option><option value="医疗">医疗</option><option value="学习">学习</option><option value="其他">其他</option></select></div><button class="btn btn-accent btn-block" onclick="ExpenseModal.save()">保存记录</button></div></div>
   <div class="modal-overlay" id="modal-income"><div class="modal"><div class="modal-handle"></div><h3>添加收入</h3><div class="field"><label>收入来源</label><input type="text" id="income-source" placeholder="如：工资、兼职"></div><div class="field"><label>金额（元）</label><input type="number" id="income-amt" placeholder="0.00" min="0" step="0.01"></div><div class="field"><label>日期</label><input type="date" id="income-date"></div><button class="btn btn-green btn-block" onclick="IncomeModal.save()">保存收入</button></div></div>
+  
   <div class="modal-overlay" id="modal-sync"><div class="modal"><div class="modal-handle"></div>
     <h3>两端同步</h3>
     <div class="card" style="margin-bottom:12px">
       <div class="flex-between"><div class="card-title" style="margin:0">当前状态</div><span class="badge" id="sync-state-badge">未开启</span></div>
-      <div class="hint" id="sync-state-text">开启后，手机和电脑用同一个同步码即可共享全部数据。</div>
+      <div class="hint" id="sync-state-text">开启后，手机和电脑用同一个同步码即可共享全部数据。GitHub Gist 作为云端存储，中国手机网络可访问。</div>
     </div>
+    <!-- GitHub 令牌设置 -->
+    <div id="token-setup-view" style="margin-bottom:12px">
+      <div class="card-title">🔑 GitHub 令牌 <small id="gh-token-status" style="color:var(--text-s);font-weight:400">检测中...</small></div>
+      <div class="field"><label>访问令牌（用于读写 Gist 同步数据）</label><input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
+      <div class="row2">
+        <button class="btn btn-primary" onclick="Sync.setToken()" style="flex:2">✅ 保存并验证</button>
+        <button class="btn btn-outline" onclick="Sync.clearToken()" style="flex:1">清除</button>
+      </div>
+      <div class="hint">💡 令牌只存在你浏览器本地，不会上传到其他地方。需要 repo 权限的 GitHub PAT。</div>
+    </div>
+    <div class="divider"></div>
     <div id="sync-off-view">
       <button class="btn btn-primary btn-block" onclick="Sync.createCode()">🔗 生成同步码（第一台设备）</button>
       <div class="divider"></div>
       <div class="field"><label>已有同步码？在第二台设备输入</label><input type="text" id="sync-code-input" placeholder="WB-XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
       <button class="btn btn-outline btn-block" onclick="Sync.joinCode()">📥 加入同步</button>
-      <div class="hint">💡 数据经 AES-256 加密后才上传，同步码就是解密钥匙。请自己保存好，丢了无法找回。</div>
+      <div class="hint">💡 数据经 AES-256 加密后存入你的 GitHub 私密 Gist，同步码就是解密钥匙。请自己保存好，丢了无法找回。</div>
     </div>
     <div id="sync-on-view" style="display:none">
       <div class="card-title">我的同步码</div>
@@ -305,7 +317,7 @@ input,textarea,select{font:inherit;color:inherit}
         <button class="btn btn-outline" onclick="Sync.copyCode()">📋 复制同步码</button>
         <button class="btn btn-outline" onclick="Sync.copyLink()">🔗 复制同步链接</button>
       </div>
-      <div class="hint">在另一台设备打开本工作台 → 点右上角同步 → 粘贴这串码即可。或直接把「同步链接」发到手机上打开，自动完成配对。</div>
+      <div class="hint">在另一台设备打开本工作台 → 点右上角同步 → 粘贴这串码 + 设置同一令牌即可。或直接把「同步链接」发到手机上打开，自动完成配对。</div>
       <div class="divider"></div>
       <div class="row2">
         <button class="btn btn-green" onclick="Sync.pushNow()">⬆️ 立即上传</button>
@@ -322,6 +334,7 @@ input,textarea,select{font:inherit;color:inherit}
     <input type="file" id="backup-file" accept=".json,application/json" style="display:none" onchange="Backup.importFile(this)">
     <div class="hint">导出的是明文 JSON，可长期留底。导入会与现有数据合并，不会覆盖。</div>
   </div></div>
+
   <div class="modal-overlay" id="modal-reading"><div class="modal"><div class="modal-handle"></div><h3>添加书籍</h3><div class="field"><label>书名</label><input type="text" id="book-title" placeholder="输入书名"></div><div class="field"><label>作者</label><input type="text" id="book-author" placeholder="输入作者"></div><div class="field"><label>状态</label><select id="book-status"><option value="want">想读</option><option value="reading">在读</option><option value="done">读完</option></select></div><div class="field"><label>笔记（可选）</label><textarea id="book-note" placeholder="阅读时做的笔记..."></textarea></div><button class="btn btn-primary btn-block" onclick="ReadingModal.save()">保存书籍</button></div></div>
 </div>
 <script>
@@ -421,10 +434,11 @@ var Crypt = {
   }
 };
 
-// ===== 同步引擎 =====
+// ===== 同步引擎（GitHub Gist 版 — 中国手机网络可访问）=====
 var Sync = {
-  ENDPOINT: 'https://textdb.dev/api/data/',
   cfg: null, dirtyTimer: null, busy: false, lastErr: '', pollTimer: null,
+  GIST_KEY: 'wb_gist_id',
+  TOKEN_KEY: 'wb_gh_token',
 
   init: function(){
     try { this.cfg = JSON.parse(localStorage.getItem(SYNC_KEY)); } catch(e){ this.cfg = null; }
@@ -453,15 +467,17 @@ var Sync = {
   on: function(){ return !!(this.cfg && this.cfg.code); },
   persist: function(){ localStorage.setItem(SYNC_KEY, JSON.stringify(this.cfg)); },
 
-  // 从同步码派生存储键：云端只看得到这串 hash，看不到同步码本身
-  slug: function(code){
-    var s = 'wb-sync-v1|' + code, a = 5381, b = 52711, c = 1103515245;
-    for (var i = 0; i < s.length; i++){ a = ((a << 5) + a + s.charCodeAt(i)) >>> 0; }
-    for (var j = s.length - 1; j >= 0; j--){ b = ((b << 5) + b + s.charCodeAt(j) * 7) >>> 0; }
-    for (var k = 0; k < s.length; k++){ c = (c * 31 + s.charCodeAt(k) * (k + 3)) >>> 0; }
-    return 'wbk' + a.toString(36) + b.toString(36) + c.toString(36);
+  getToken: function(){
+    var t = localStorage.getItem(this.TOKEN_KEY);
+    return t || '';
   },
+  saveToken: function(t){
+    if (t) localStorage.setItem(this.TOKEN_KEY, t.trim());
+    else localStorage.removeItem(this.TOKEN_KEY);
+  },
+  hasToken: function(){ return !!this.getToken(); },
 
+  // 从同步码派生加密密钥（与旧版一致）
   genCode: function(){
     var AB = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ', out = [];
     var r = new Uint8Array(12);
@@ -486,19 +502,58 @@ var Sync = {
     this.dirtyTimer = setTimeout(function(){ self.push(); }, 2000);
   },
 
+  // --- 核心：用 GitHub Gist API 做同步后端 ---
+  _api: function(method, path, body){
+    var token = this.getToken();
+    if (!token) return Promise.reject(new Error('请先设置 GitHub 令牌（点右上角同步 → 设置令牌）'));
+    var url = 'https://api.github.com' + path;
+    var opts = {
+      method: method,
+      headers: { 'Authorization': 'Bearer ' + token, 'User-Agent': 'WorkBuddy-Sync/1.0' }
+    };
+    if (body){
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(url, opts).then(function(res){
+      if (res.status === 401 || res.status === 403) throw new Error('GitHub 令牌无效或已过期，请重新设置');
+      if (res.status === 404) return { status: res.status, json: {} };
+      return res.json().then(function(j){ return { status: res.status, json: j }; });
+    }).then(function(r){
+      if (r.status >= 400) throw new Error((r.json.message || 'HTTP ' + r.status));
+      return r.json;
+    });
+  },
+
+  _getGistId: function(){ return this.cfg ? this.cfg.gistId : ''; },
+
   push: function(){
     if (!this.on()) return Promise.resolve(false);
+    if (!this.hasToken()) { this.lastErr = '未设置 GitHub 令牌'; this.paint('err'); return Promise.resolve(false); }
     var self = this, code = this.cfg.code;
     this.busy = true; this.paint('busy');
     var data = loadStore();
     return Crypt.encrypt(code, JSON.stringify(data))
       .then(function(payload){
-        return fetch(self.ENDPOINT + self.slug(code), {
-          method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload
-        });
+        var files = { 'workbench-sync.json': { content: payload } };
+        var gistId = self._getGistId();
+        if (gistId){
+          return self._api('PATCH', '/gists/' + gistId, { files: files }).then(function(g){
+            return g.id;
+          });
+        } else {
+          return self._api('POST', '/gists', {
+            description: 'WorkBuddy 工作台同步数据（AES-256 加密）',
+            public: false,
+            files: files
+          }).then(function(g){
+            self.cfg.gistId = g.id;
+            self.persist();
+            return g.id;
+          });
+        }
       })
-      .then(function(res){
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+      .then(function(id){
         self.cfg.lastPush = Date.now(); self.persist();
         self.busy = false; self.lastErr = ''; self.paint();
         return true;
@@ -511,17 +566,16 @@ var Sync = {
 
   pull: function(silentFail){
     if (!this.on()) return Promise.resolve(false);
+    if (!this.hasToken()) { this.lastErr = '未设置 GitHub 令牌'; this.paint('err'); return Promise.resolve(false); }
     var self = this, code = this.cfg.code;
+    var gistId = self._getGistId();
+    if (!gistId) { this.busy = false; this.paint(); return Promise.resolve(false); }
     this.busy = true; this.paint('busy');
-    return fetch(this.ENDPOINT + this.slug(code), { cache: 'no-store' })
-      .then(function(res){
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.text();
-      })
-      .then(function(txt){
-        txt = (txt || '').trim();
-        if (!txt) { self.busy = false; self.paint(); return false; }
-        return Crypt.decrypt(code, txt).then(function(plain){
+    return this._api('GET', '/gists/' + gistId)
+      .then(function(g){
+        var f = g.files['workbench-sync.json'];
+        if (!f || !f.content) return false;
+        return Crypt.decrypt(code, f.content).then(function(plain){
           var remote = JSON.parse(plain);
           var local = loadStore();
           var merged = mergeStore(local, remote);
@@ -531,7 +585,6 @@ var Sync = {
           self.busy = false; self.lastErr = ''; self.paint();
           if (before !== after){
             renderAll();
-            // 本地有云端没有的内容，补推一次
             if (JSON.stringify(remote) !== after) self.push();
           }
           return true;
@@ -541,7 +594,7 @@ var Sync = {
         self.busy = false;
         self.lastErr = err.message || '拉取失败';
         self.paint('err');
-        if (!silentFail) alert('拉取失败：' + self.lastErr);
+        if (!silentFail) alert('同步失败：' + self.lastErr);
         return false;
       });
   },
@@ -560,15 +613,19 @@ var Sync = {
 
   // --- 面板操作 ---
   createCode: function(){
+    if (!this.hasToken()){
+      alert('请先设置 GitHub 令牌才能使用同步功能。\n\n在下方「GitHub 令牌」处粘贴你的 ghp_ 开头的访问令牌。');
+      SyncUI.showTokenField();
+      return;
+    }
     var code = this.genCode();
-    this.cfg = { code: code, at: Date.now() };
+    this.cfg = { code: code, at: Date.now(), gistId: '' };
     this.persist();
     var self = this;
     this.push().then(function(ok){
-      SyncUI.paintPanel();
-      self.paint();
+      SyncUI.paintPanel(); self.paint();
       if (ok) alert('同步码已生成：\n' + code + '\n\n请在另一台设备输入同一个码。');
-      else alert('同步码已生成，但首次上传失败，请检查网络后点「立即上传」。');
+      else alert('同步码已生成，但首次上传失败，请检查令牌是否正确后点「立即上传」。');
       if (!self.pollTimer){
         self.pollTimer = setInterval(function(){ if (!document.hidden) self.pull(false); }, 60000);
       }
@@ -576,24 +633,52 @@ var Sync = {
   },
 
   joinCode: function(){
+    if (!this.hasToken()){
+      alert('请先设置 GitHub 令牌才能加入同步。\n\n在下方「GitHub 令牌」处粘贴你的 ghp_ 开头的访问令牌。');
+      SyncUI.showTokenField();
+      return;
+    }
     var raw = document.getElementById('sync-code-input').value;
     var code = this.normalize(raw);
     if (!code){ alert('同步码格式不对，应该是 12 位字母数字，例如 WB-A3F9-K2M7-P1Q8'); return; }
-    this.cfg = { code: code, at: Date.now() };
+    this.cfg = { code: code, at: Date.now(), gistId: '' };
     this.persist();
     var self = this;
     this.pull(true).then(function(ok){
       SyncUI.paintPanel(); self.paint();
       if (ok){ alert('配对成功，数据已合并。'); self.push(); }
-      else alert('同步失败：' + (self.lastErr || '未知错误') + '\n\n如果提示网络/连接类错误，说明手机网络连不上同步服务器，需要更换为国内可访问的服务器。');
+      else alert('同步失败：' + (self.lastErr || '未知错误') + '\n\n请确认：\n1. GitHub 令牌正确且未过期\n2. 另一台设备已点过「立即上传」');
       if (!self.pollTimer){
         self.pollTimer = setInterval(function(){ if (!document.hidden) self.pull(false); }, 60000);
       }
     });
   },
 
-  pushNow: function(){ var s = this; this.push().then(function(ok){ alert(ok ? '已上传到云端' : '上传失败：' + s.lastErr); }); },
-  pullNow: function(){ var s = this; this.pull(true).then(function(ok){ alert(ok ? '已从云端拉取并合并' : '拉取失败：' + (s.lastErr || '云端暂无数据')); }); },
+  setToken: function(){
+    var t = document.getElementById('gh-token-input').value.trim();
+    if (!t){ alert('请输入 GitHub 访问令牌（ghp_ 开头）'); return; }
+    if (t.length < 30){ alert('令牌格式不对，应该是一串以 ghp_ 开头的长字符串'); return; }
+    this.saveToken(t);
+    var self = this;
+    // 验证令牌是否有效
+    this._api('GET', '/user').then(function(u){
+      alert('✅ 令牌验证成功！GitHub 用户：' + (u.login || '未知') + '\n\n现在可以生成或加入同步了。');
+      SyncUI.paintPanel(); self.paint();
+    }).catch(function(err){
+      self.saveToken('');
+      alert('❌ 令牌无效：' + err.message + '\n\n请检查令牌是否正确、是否已过期。');
+      SyncUI.paintPanel();
+    });
+  },
+
+  clearToken: function(){
+    if (!confirm('清除 GitHub 令牌？清除后将无法同步。')) return;
+    this.saveToken('');
+    SyncUI.paintPanel();
+  },
+
+  pushNow: function(){ var s = this; this.push().then(function(ok){ alert(ok ? '✅ 已上传到 GitHub Gist' : '❌ 上传失败：' + s.lastErr); }); },
+  pullNow: function(){ var s = this; this.pull(true).then(function(ok){ alert(ok ? '✅ 已从云端拉取并合并' : '❌ 拉取失败：' + (s.lastErr || '云端暂无数据')); }); },
 
   copyCode: function(){ copyText(this.cfg.code, '同步码已复制'); },
   copyLink: function(){
@@ -610,6 +695,8 @@ var Sync = {
   }
 };
 
+
+
 function copyText(text, okMsg){
   var done = function(){ alert(okMsg); };
   if (navigator.clipboard && navigator.clipboard.writeText){
@@ -623,36 +710,49 @@ function copyText(text, okMsg){
   }
 }
 
+// ===== 同步面板 UI =====
 var SyncUI = {
-  open: function(){ this.paintPanel(); openModal('modal-sync'); },
+  open: function(){ openModal('modal-sync'); this.paintPanel(); },
   paintPanel: function(){
+    var off = document.getElementById('sync-off-view');
+    var on = document.getElementById('sync-on-view');
     var badge = document.getElementById('sync-state-badge');
-    var text = document.getElementById('sync-state-text');
-    var offV = document.getElementById('sync-off-view');
-    var onV = document.getElementById('sync-on-view');
-    var show = document.getElementById('sync-code-show');
-    if (!badge) return;
+    var stateText = document.getElementById('sync-state-text');
+    var tokenField = document.getElementById('token-setup-view');
+    if (!off || !on) return;
     if (Sync.on()){
-      badge.textContent = Sync.lastErr ? '异常' : '已开启';
-      badge.style.color = Sync.lastErr ? 'var(--accent-ro)' : 'var(--accent-gr)';
-      var t = [];
-      if (Sync.cfg.lastPush) t.push('上次上传 ' + new Date(Sync.cfg.lastPush).toLocaleTimeString('zh-CN'));
-      if (Sync.cfg.lastPull) t.push('上次拉取 ' + new Date(Sync.cfg.lastPull).toLocaleTimeString('zh-CN'));
-      if (Sync.lastErr) t.push('错误：' + Sync.lastErr);
-      if (!Crypt.ok()) t.push('⚠️ 当前不是 https 环境，数据未加密上传');
-      text.innerHTML = t.length ? t.join('<br>') : '改动会在 2 秒后自动上传，每分钟自动拉取一次。';
-      offV.style.display = 'none';
-      onV.style.display = '';
-      show.textContent = Sync.cfg.code;
+      off.style.display = 'none';
+      on.style.display = '';
+      badge.textContent = Sync.lastErr ? '异常' : (Sync.busy ? '同步中' : '正常');
+      badge.style.background = Sync.lastErr ? 'var(--accent-r)' : (Sync.busy ? 'var(--accent-w)' : 'var(--accent-gr)');
+      stateText.textContent = Sync.lastErr
+        ? ('错误：' + Sync.lastErr)
+        : ('上次拉取：' + (Sync.cfg.lastPull ? new Date(Sync.cfg.lastPull).toLocaleString() : '—') +
+           '\n上次上传：' + (Sync.cfg.lastPush ? new Date(Sync.cfg.lastPush).toLocaleString() : '—'));
+      var codeEl = document.getElementById('sync-code-show');
+      if (codeEl) codeEl.textContent = Sync.cfg.code || '—';
+      // 显示令牌状态
+      var tokenStatus = document.getElementById('gh-token-status');
+      if (tokenStatus) tokenStatus.textContent = Sync.hasToken() ? '✅ 已设置' : '❌ 未设置';
     } else {
+      off.style.display = '';
+      on.style.display = 'none';
       badge.textContent = '未开启';
-      badge.style.color = 'var(--text-s)';
-      text.textContent = '开启后，手机和电脑用同一个同步码即可共享全部数据。';
-      offV.style.display = '';
-      onV.style.display = 'none';
+      badge.style.background = 'var(--text-s)';
+      stateText.textContent = '开启后，手机和电脑用同一个同步码即可共享全部数据。GitHub Gist 作为云端存储，中国手机网络可访问。';
     }
+    // 令牌设置区域始终可见
+    if (tokenField) tokenField.style.display = '';
+    var tokenStatus2 = document.getElementById('gh-token-status');
+    if (tokenStatus2) tokenStatus2.textContent = Sync.hasToken() ? '✅ 已设置（' + Sync.getToken().slice(0,8) + '...）' : '❌ 未设置';
+  },
+  showTokenField: function(){
+    var el = document.getElementById('gh-token-input');
+    if (el){ el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
   }
 };
+
+;
 
 var Backup = {
   exportFile: function(){
@@ -1289,13 +1389,9 @@ External.renderAll();
 IELTS.renderProgress();
 Sync.init();
 
-// 强制卸载可能出问题的旧 Service Worker，再注册新版本（避免旧 SW 拦截跨域同步请求导致崩溃）
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(function(regs){
-    regs.forEach(function(r){ try{ r.unregister(); }catch(e){} });
-  }).catch(function(){});
-  navigator.serviceWorker.register('sw.js').catch(function(){});
-}
+// 暂时禁用 Service Worker（避免在部分手机浏览器上拦截跨域同步请求导致崩溃）
+// 如需离线支持，可在确认同步稳定后重新启用 sw.js
+/* if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); } */
 </script>
 </body>
 </html>
