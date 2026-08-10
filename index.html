@@ -58,6 +58,14 @@ input,textarea,select{font:inherit;color:inherit}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--text-s);margin-bottom:5px}
 .field input,.field textarea,.field select{width:100%;padding:10px 12px;border-radius:var(--r-sm);border:1.5px solid rgba(155,139,126,.25);background:var(--white);outline:none;transition:border-color .2s}
 .field input:focus,.field textarea:focus{border-color:var(--primary)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg-btn{flex:1;min-width:72px;padding:8px 10px;border-radius:var(--r-sm);border:1.5px solid rgba(155,139,126,.25);background:var(--white);color:var(--text-s);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+.seg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.ai-card{margin-top:14px;border:1.5px solid var(--primary-l);border-radius:var(--r);padding:14px;background:var(--white)}
+.ai-card .ai-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ai-card .ai-title{font-size:13px;font-weight:700;color:var(--text-p)}
+.ai-card .ai-body{font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--text-p)}
+.ai-card .ai-tags{margin-top:10px;font-size:13px;color:var(--accent-w);word-break:break-word}
 .task-list{list-style:none}
 .task-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(155,139,126,.1)}
 .task-item:last-child{border-bottom:none}
@@ -239,11 +247,12 @@ input,textarea,select{font:inherit;color:inherit}
         <button class="sub-tab active" data-sub="ext-douyin">抖音选题库</button>
         <button class="sub-tab" data-sub="ext-xhs">小红书选题库</button>
         <button class="sub-tab" data-sub="ext-nutrient">成分党选题库</button>
+        <button class="sub-tab" data-sub="ext-ai">✨ AI 文案</button>
       </div>
       <div class="sub-panel active" id="panel-ext-douyin">
         <div class="rotate-bar"><div class="ri" id="douyin-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('douyin')">🔄 刷新</button></div>
         <div id="douyin-list"></div>
-        <div class="share-tip" style="margin-top:4px">🔍 点「在抖音搜这个选题」会打开抖音官方搜索结果页，手机上会直接唤起抖音 APP</div>
+        <div class="share-tip" style="margin-top:4px">🔍 点「打开抖音看这个选题」会直接唤起抖音 APP，手机上跳到对应搜索结果</div>
       </div>
       <div class="sub-panel" id="panel-ext-xhs">
         <div class="rotate-bar"><div class="ri" id="xhs-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('xhs')">🔄 刷新</button></div>
@@ -253,10 +262,36 @@ input,textarea,select{font:inherit;color:inherit}
       <div class="sub-panel" id="panel-ext-nutrient">
         <div class="rotate-bar"><div class="ri" id="nutrient-update">计算中...</div><button class="btn btn-outline" style="padding:5px 10px;font-size:11px;flex-shrink:0" onclick="External.refresh('nutrient')">🔄 刷新</button></div>
         <div id="nutrient-list"></div>
-        <div class="share-tip" style="margin-top:4px">🔍 点「在小红书搜这个选题」会打开小红书官方搜索结果页，手机上会直接唤起小红书 APP</div>
+        <div class="share-tip" style="margin-top:4px">🔍 点「打开小红书看这个选题」会直接唤起小红书 APP，手机上跳到对应搜索结果</div>
+      </div>
+      <!-- AI 文案生成器 -->
+      <div class="sub-panel" id="panel-ext-ai">
+        <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,rgba(196,168,130,.14),rgba(196,168,130,.04))">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">✨ 自动生成种草文案</div>
+          <div style="font-size:11px;color:var(--text-s)">填写产品/主题，一键生成抖音、小红书、朋友圈多套文案。纯本地生成，无需联网、不走任何服务器。</div>
+        </div>
+        <div class="field"><label>产品 / 主题名称 *</label><input type="text" id="ai-topic" placeholder="如：烟酰胺美白精华、敏感肌面霜、防晒喷雾" style="font-size:16px"></div>
+        <div class="field"><label>核心卖点（逗号分隔，可选）</label><input type="text" id="ai-points" placeholder="如：温和不刺激,提亮快,平价好用" style="font-size:16px"></div>
+        <div class="field"><label>目标平台</label>
+          <div class="seg" id="ai-platform">
+            <button class="seg-btn active" data-v="xhs">小红书</button>
+            <button class="seg-btn" data-v="douyin">抖音</button>
+            <button class="seg-btn" data-v="all">通用</button>
+          </div>
+        </div>
+        <div class="field"><label>文案风格</label>
+          <div class="seg" id="ai-style">
+            <button class="seg-btn active" data-v="zhongcao">种草安利</button>
+            <button class="seg-btn" data-v="ceping">硬核测评</button>
+            <button class="seg-btn" data-v="qingdan">好物清单</button>
+            <button class="seg-btn" data-v="tongdian">痛点直击</button>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="AI.generate()">🪄 生成文案</button>
+        <div id="ai-result"></div>
+        <div class="share-tip" style="margin-top:8px">💡 想生成更智能的文案？在「两端同步」面板填入 DeepSeek / 通义千问 API Key 后可升级为真 AI（目前为本地高质量模板生成）。</div>
       </div>
     </div>
-    <!-- 内化 -->
     <div class="page" id="page-internal">
       <div class="sub-tabs">
         <button class="sub-tab active" data-sub="int-ielts">雅思训练</button>
@@ -940,6 +975,31 @@ var External = {
   douyinUrl: function(kw){ return 'https://www.douyin.com/search/' + encodeURIComponent(kw); },
   xhsUrl: function(kw){ return 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(kw); },
 
+  // 优先唤起 App（scheme），未安装/失败时回退到官方网页搜索页
+  openApp: function(platform, kw){
+    var webUrl, scheme;
+    kw = kw || '';
+    if (platform === 'douyin'){
+      webUrl = 'https://www.douyin.com/search/' + encodeURIComponent(kw);
+      scheme = 'snssdk1128://search?keyword=' + encodeURIComponent(kw);
+    } else {
+      webUrl = 'https://www.xiaohongshu.com/search_result?keyword=' + encodeURIComponent(kw);
+      scheme = 'xhsdiscover://search/result?keyword=' + encodeURIComponent(kw);
+    }
+    // iOS/Android 用隐藏 iframe 唤起 App，避免弹"无法打开"告警
+    try {
+      var ifr = document.createElement('iframe');
+      ifr.style.display = 'none';
+      ifr.src = scheme;
+      document.body.appendChild(ifr);
+      setTimeout(function(){ try{ document.body.removeChild(ifr); }catch(e){} }, 1500);
+    } catch(e){}
+    // 1.8s 后若页面仍可见（说明 App 没被唤起），自动跳网页搜索页
+    setTimeout(function(){
+      if (!document.hidden) window.open(webUrl, '_blank');
+    }, 1800);
+  },
+
   esc: function(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; },
 
   renderAll: function(){
@@ -962,7 +1022,7 @@ var External = {
         + '<br><strong>可复制方法：</strong>' + self.esc(v.m) + '</div>'
         + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
         + '<div class="actions">'
-        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-douyin">🎬 在抖音搜这个选题</a>'
+        + '<button class="jump-link jump-douyin" onclick="External.openApp(\'douyin\', ' + JSON.stringify(v.k) + ')">🎬 打开抖音看这个选题</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '</div></div>';
@@ -983,7 +1043,7 @@ var External = {
         + '<br><strong>可复制方法：</strong>' + self.esc(v.m) + '</div>'
         + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
         + '<div class="actions">'
-        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-xhs">📕 在小红书搜这个选题</a>'
+        + '<button class="jump-link jump-xhs" onclick="External.openApp(\'xhs\', ' + JSON.stringify(v.k) + ')">📕 打开小红书看这个选题</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '</div></div>';
@@ -1004,7 +1064,7 @@ var External = {
         + '<br><strong>爆款公式：</strong>' + self.esc(v.f) + '</div>'
         + '<div class="mt-8"><span class="kw">🔍 ' + self.esc(v.k) + '</span></div>'
         + '<div class="actions">'
-        + '<a href="' + url + '" target="_blank" rel="noopener" class="jump-link jump-xhs">📕 在小红书搜这个选题</a>'
+        + '<button class="jump-link jump-xhs" onclick="External.openApp(\'xhs\', ' + JSON.stringify(v.k) + ')">📕 打开小红书看这个选题</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.copyAnalysis(this)">📋 复制</button>'
         + '<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="External.markSaved(this)">⭐ 收藏</button>'
         + '</div></div>';
@@ -1085,6 +1145,117 @@ var External = {
     setTimeout(function(){ btn.textContent = orig; btn.disabled = false; }, 1800);
   }
 };
+
+// ===== AI 文案生成器（本地模板，纯离线）=====
+var AI = {
+  getSeg: function(id){
+    var el = document.getElementById(id);
+    var a = el && el.querySelector('.seg-btn.active');
+    return a ? a.dataset.v : '';
+  },
+  generate: function(){
+    var topic = (document.getElementById('ai-topic').value || '').trim();
+    if (!topic){ alert('请先填写产品 / 主题名称'); document.getElementById('ai-topic').focus(); return; }
+    var points = (document.getElementById('ai-points').value || '')
+      .split(/[,，、]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var platform = this.getSeg('ai-platform') || 'xhs';
+    var style = this.getSeg('ai-style') || 'zhongcao';
+    var cards = [];
+    if (platform === 'all'){
+      cards.push(this.build(topic, points, 'xhs', style, '小红书版'));
+      cards.push(this.build(topic, points, 'douyin', style, '抖音版'));
+    } else {
+      cards.push(this.build(topic, points, platform, style, platform === 'xhs' ? '小红书版' : '抖音版'));
+    }
+    this.render(cards);
+  },
+
+  build: function(topic, points, platform, style, label){
+    var hooks = {
+      zhongcao: ['无限回购❗这款' + topic + '真的绝', '相见恨晚｜' + topic + '凭什么被问爆', '素颜也敢出门，全靠' + topic, '被闺蜜安利的' + topic + '，真香了'],
+      ceping: ['实测30天｜' + topic + '到底行不行', '扒完成分表，' + topic + '真话来了', '上脸亲测｜' + topic + '值得冲吗', '不吹不黑，' + topic + '深度测评'],
+      qingdan: ['我的宝藏清单里一定有' + topic, topic + '｜闭眼入不踩雷', '无限回购TOP｜' + topic, '年度好物｜' + topic + '必须拥有'],
+      tongdian: ['别再乱花冤枉钱了，认准' + topic, '踩坑无数后，我只留了' + topic, '如果你也被困扰，试试' + topic, '听劝！' + topic + '早用早享受']
+    };
+    var hook = hooks[style][Math.floor((topic.length + points.length) % hooks[style].length)];
+
+    var p = points.length ? points : ['温和不刺激', '见效明显', '性价比高'];
+    var body;
+    if (platform === 'xhs'){
+      body = '🔸 为什么推荐：' + topic + '是我近期最惊喜的发现。\n'
+        + '🔸 核心亮点：' + p.slice(0, 3).join('、') + '，用下来体验很扎实。\n'
+        + (style === 'ceping'
+            ? '🔸 实测感受：连续用了两周，肤感/效果都在线，没有踩雷。\n'
+            : '🔸 使用感受：上手就很喜欢，已经安利给身边姐妹。\n')
+        + '🔸 适合谁：想要省心选品、不想做取舍的人。\n'
+        + '\n真心建议先了解自己需求再入手，别盲目跟风～\n你们有用过类似的吗？评论区聊聊👇';
+    } else if (platform === 'douyin'){
+      body = '家人们！今天必须给你们按头安利' + topic + '！\n\n'
+        + '它最打动我的就是：' + p.slice(0, 2).join('、') + '。\n'
+        + '我自己用了之后，真的忍不住想分享。\n\n'
+        + (style === 'tongdian'
+            ? '之前踩了好多坑，直到遇到它才稳定下来。\n'
+            : '不是广！是真心觉得好用才来说的。\n')
+        + '想了解的扣“1”，我出详细教程！关注我，不迷路～';
+    } else {
+      body = topic + '｜' + p.slice(0, 3).join(' · ') + '\n'
+        + '亲测好用，分享给同样在挑的人。有疑问评论区见～';
+    }
+
+    var tagPool = {
+      zhongcao: ['好物分享', '无限回购', '宝藏好物', '平价好物'],
+      ceping: ['实测', '成分党', '深度测评', '避坑指南'],
+      qingdan: ['好物清单', '闭眼入', '年度爱用', '种草'],
+      tongdian: ['避坑', '听劝', '别乱买', '真实分享']
+    };
+    var tags = ['#' + topic.replace(/\s/g, '')].concat(tagPool[style].slice(0, 3)).map(function(t){ return '#' + t.replace(/^#/, ''); }).join(' ');
+
+    return { label: label, title: hook, body: body, tags: tags };
+  },
+
+  render: function(cards){
+    var box = document.getElementById('ai-result');
+    var html = '';
+    for (var i = 0; i < cards.length; i++){
+      var c = cards[i];
+      var full = c.title + '\n\n' + c.body + '\n\n' + c.tags;
+      html += '<div class="ai-card">'
+        + '<div class="ai-head"><span class="ai-title">' + c.label + '</span>'
+        + '<button class="btn btn-outline" style="padding:4px 10px;font-size:11px" onclick="AI.copy(this)">📋 复制全文</button></div>'
+        + '<div class="ai-body" style="margin-top:6px;font-weight:700">' + this.esc(c.title) + '</div>'
+        + '<div class="ai-body">' + this.esc(c.body) + '</div>'
+        + '<div class="ai-tags">' + this.esc(c.tags) + '</div>'
+        + '<textarea style="position:absolute;left:-9999px;width:1px;height:1px" readonly>' + this.esc(full) + '</textarea>'
+        + '</div>';
+    }
+    box.innerHTML = html;
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  },
+
+  esc: function(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; },
+
+  copy: function(btn){
+    var card = btn.closest('.ai-card');
+    var ta = card.querySelector('textarea');
+    var done = function(){ var o = btn.textContent; btn.textContent = '已复制！'; setTimeout(function(){ btn.textContent = o; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(done).catch(function(){ ta.select(); try{document.execCommand('copy');done();}catch(e){alert(ta.value);} });
+    } else {
+      ta.select(); try { document.execCommand('copy'); done(); } catch(e){ alert(ta.value); }
+    }
+  }
+};
+
+// 分段选择器点击切换
+document.querySelectorAll('.seg').forEach(function(seg){
+  seg.addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    seg.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+});
+
 
 // 每分钟刷新倒计时；跨过 6 小时时间片时自动重渲染
 var _lastCycle = External.cycle();
