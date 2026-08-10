@@ -19,6 +19,8 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  // 跨域请求直接放行，不经过 Service Worker（避免同步API被拦截后崩溃）
+  if (url.origin !== self.location.origin) return;
   // 静态资源：先网络再缓存（保证更新后立刻生效）
   if (url.pathname.match(/\.(html|js|css|json|png|svg|ico)$/)) {
     event.respondWith(
@@ -34,9 +36,9 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  // 其他请求走默认
+  // 其他同源请求：缓存优先 + 网络回退
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => response || fetch(event.request).catch(() => null))
   );
 });
 
