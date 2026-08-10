@@ -1289,7 +1289,13 @@ External.renderAll();
 IELTS.renderProgress();
 Sync.init();
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+// 强制卸载可能出问题的旧 Service Worker，再注册新版本（避免旧 SW 拦截跨域同步请求导致崩溃）
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ try{ r.unregister(); }catch(e){} });
+  }).catch(function(){});
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
 </script>
 </body>
 </html>
