@@ -263,8 +263,10 @@ input,textarea,select{font:inherit;color:inherit}
         <div id="nutrient-list"></div>
         <div class="share-tip" style="margin-top:4px">🔍 点「打开小红书看这个选题」会直接唤起小红书 APP，手机上跳到对应搜索结果</div>
       </div>
+    </div>
 
-<div class="page" id="page-internal">
+    <!-- 内化 -->
+    <div class="page" id="page-internal">
       <div class="sub-tabs">
         <button class="sub-tab active" data-sub="int-ielts">雅思训练</button>
         <button class="sub-tab" data-sub="int-reading">阅读书架</button>
@@ -1116,7 +1118,7 @@ var External = {
   }
 };
 
-// ===== AI 文案生成器（本地模板，纯离线）=====
+// ===== AI 文案生成器（本地模板，纯离线，根据卡片主题自动匹配）=====
 var AI = {
   getSeg: function(id){
     var el = document.getElementById(id);
@@ -1140,47 +1142,256 @@ var AI = {
     this.render(cards);
   },
 
+  // 通用 build（手动填写模式使用，保持向后兼容）
   build: function(topic, points, platform, style, label){
-    var hooks = {
-      zhongcao: ['无限回购❗这款' + topic + '真的绝', '相见恨晚｜' + topic + '凭什么被问爆', '素颜也敢出门，全靠' + topic, '被闺蜜安利的' + topic + '，真香了'],
-      ceping: ['实测30天｜' + topic + '到底行不行', '扒完成分表，' + topic + '真话来了', '上脸亲测｜' + topic + '值得冲吗', '不吹不黑，' + topic + '深度测评'],
-      qingdan: ['我的宝藏清单里一定有' + topic, topic + '｜闭眼入不踩雷', '无限回购TOP｜' + topic, '年度好物｜' + topic + '必须拥有'],
-      tongdian: ['别再乱花冤枉钱了，认准' + topic, '踩坑无数后，我只留了' + topic, '如果你也被困扰，试试' + topic, '听劝！' + topic + '早用早享受']
-    };
-    var hook = hooks[style][Math.floor((topic.length + points.length) % hooks[style].length)];
+    return this.buildForTopic(topic, points, platform, style, label, 'general');
+  },
 
-    var p = points.length ? points : ['温和不刺激', '见效明显', '性价比高'];
-    var body;
-    if (platform === 'xhs'){
-      body = '🔸 为什么推荐：' + topic + '是我近期最惊喜的发现。\n'
-        + '🔸 核心亮点：' + p.slice(0, 3).join('、') + '，用下来体验很扎实。\n'
-        + (style === 'ceping'
-            ? '🔸 实测感受：连续用了两周，肤感/效果都在线，没有踩雷。\n'
-            : '🔸 使用感受：上手就很喜欢，已经安利给身边姐妹。\n')
-        + '🔸 适合谁：想要省心选品、不想做取舍的人。\n'
-        + '\n真心建议先了解自己需求再入手，别盲目跟风～\n你们有用过类似的吗？评论区聊聊👇';
-    } else if (platform === 'douyin'){
-      body = '家人们！今天必须给你们按头安利' + topic + '！\n\n'
-        + '它最打动我的就是：' + p.slice(0, 2).join('、') + '。\n'
-        + '我自己用了之后，真的忍不住想分享。\n\n'
-        + (style === 'tongdian'
-            ? '之前踩了好多坑，直到遇到它才稳定下来。\n'
-            : '不是广！是真心觉得好用才来说的。\n')
-        + '想了解的扣“1”，我出详细教程！关注我，不迷路～';
-    } else {
-      body = topic + '｜' + p.slice(0, 3).join(' · ') + '\n'
-        + '亲测好用，分享给同样在挑的人。有疑问评论区见～';
-    }
+  // 核心：根据主题类型生成对应文案
+  buildForTopic: function(topic, points, platform, style, label, topicType, cardData){
+    var cd = cardData || {};
+    var t = cd.title || topic;
+    var d = cd.desc || '';
+    var r = cd.reason || '';
+    var s = cd.strategy || '';
+    var m = cd.method || '';
 
-    var tagPool = {
-      zhongcao: ['好物分享', '无限回购', '宝藏好物', '平价好物'],
-      ceping: ['实测', '成分党', '深度测评', '避坑指南'],
-      qingdan: ['好物清单', '闭眼入', '年度爱用', '种草'],
-      tongdian: ['避坑', '听劝', '别乱买', '真实分享']
-    };
-    var tags = ['#' + topic.replace(/\s/g, '')].concat(tagPool[style].slice(0, 3)).map(function(t){ return '#' + t.replace(/^#/, ''); }).join(' ');
+    var templates = this.getTemplates(topicType, t, d, r, s, m);
+    var tplSet = templates[style] || templates['default'];
+    var hookIdx = Math.abs(this.hashStr(t + platform) % tplSet.hooks.length);
+    var hook = tplSet.hooks[hookIdx];
+
+    var body = this.buildBody(platform, style, topicType, t, d, r, s, m, points, tplSet);
+
+    var tags = this.buildTags(topicType, topic, t, style);
 
     return { label: label, title: hook, body: body, tags: tags };
+  },
+
+  // 简单字符串哈希（确定性随机）
+  hashStr: function(str){
+    var h = 0;
+    for (var i = 0; i < str.length; i++){ h = ((h << 5) - h) + str.charCodeAt(i); h = h & h; }
+    return Math.abs(h);
+  },
+
+  // 根据主题类型返回对应的模板集
+  getTemplates: function(type, t, d, r, s, m){
+    switch(type){
+      case 'douyin':
+        return {
+          default: {
+            hooks: [
+              '🔥' + t + '｜这条视频我拍了3遍才敢发',
+              '承认吧，你刷到我就走不掉了｜' + t,
+              '为什么这条' + t + '能火？我拆解给你看',
+              t + '——普通人也能复制的爆款逻辑'
+            ]
+          },
+          story: {
+            hooks: [
+              '「' + t + '」背后，没人说的真话',
+              t + '：那些不敢发朋友圈的瞬间',
+              '关于' + t + '，我有话想说',
+              '这条视频献给每一个' + (r && r.length > 5 ? r.slice(0, 15) : '认真生活') + '的人'
+            ]
+          },
+          howto: {
+            hooks: [
+              t + '手把手教程｜新手直接抄作业',
+              '把' + t + '讲透，这一篇就够了',
+              t + '实操指南｜从0到1完整路线图',
+              '别再瞎折腾了！' + t + '正确姿势在这里'
+            ]
+          }
+        };
+      case 'xhs':
+        return {
+          default: {
+            hooks: [
+              '关于' + t + '，说点真心话',
+              t + '｜我的真实体验分享',
+              '复盘' + t + '，我希望早点知道这些',
+              t + '不完全指南｜收藏备用'
+            ]
+          },
+          life: {
+            hooks: [
+              t + '｜治愈系日常碎片',
+              '独居/' + t + '｜一个人的生活也可以很丰盛',
+              '关于' + t + '的一些小确幸✨',
+              t + '记录｜平凡日子里的光'
+            ]
+          },
+          money: {
+            hooks: [
+              t + '｜普通人搞钱路上的真实复盘',
+              t + '实操｜我是怎么做到的',
+              '月薪5000→' + t + '，我的方法全公开',
+              t + '避坑｜踩过坑才敢说的话'
+            ]
+          }
+        };
+      case 'nutrient':
+        return {
+          default: {
+            hooks: [
+              '成分党进阶｜' + t + '深度解析',
+              '扒完成分表，' + t + '的真相来了',
+              t + '｜从成分到搭配一次讲清',
+              '不吹不黑，' + t + '到底值不值得入'
+            ]
+          },
+          ceping: {
+            hooks: [
+              '实测30天｜' + t + '到底行不行',
+              '上脸/上手亲测｜' + t + '值得冲吗',
+              '扒完成分表，' + t + '真话来了',
+              '不吹不黑，' + t + '深度测评'
+            ]
+          },
+          zhongcao: {
+            hooks: [
+              '无限回购❗' + t + '真的绝',
+              '相见恨晚｜' + t + '凭什么被问爆',
+              '被问爆了800遍的' + t + '，终于写出来了',
+              '按头安利！' + t + '不用犹豫直接冲'
+            ]
+          }
+        };
+      default: // general / 手动填写模式
+        return {
+          zhongcao: { hooks: ['无限回购❗这款' + t + '真的绝', '相见恨晚｜' + t + '凭什么被问爆', '素颜也敢出门，全靠' + t, '被闺蜜安利的' + t + '，真香了'] },
+          ceping: { hooks: ['实测30天｜' + t + '到底行不行', '扒完成分表，' + t + '真话来了', '上脸亲测｜' + t + '值得冲吗', '不吹不黑，' + t + '深度测评'] },
+          qingdan: { hooks: ['我的宝藏清单里一定有' + t, t + '｜闭眼入不踩雷', '无限回购TOP｜' + t, '年度好物｜' + t + '必须拥有'] },
+          tongdian: { hooks: ['别再乱花冤枉钱了，认准' + t, '踩坑无数后，我只留了' + t, '如果你也被困扰，试试' + t, '听劝！' + t + '早用早享受'] },
+          default: { hooks: ['关于' + t + '，说点真心话', t + '分享｜真实体验记录', t + '不完全指南', '聊聊' + t + '那些事'] }
+        };
+    }
+  },
+
+  // 根据主题类型和平台生成正文
+  buildBody: function(platform, style, topicType, t, d, r, s, m, points, tplSet){
+    var p = points && points.length ? points : [];
+
+    if (topicType === 'douyin'){
+      return this.bodyDouyin(platform, t, d, r, s, m, p);
+    } else if (topicType === 'xhs'){
+      return this.bodyXhs(platform, t, d, r, s, m, p);
+    } else if (topicType === 'nutrient'){
+      return this.bodyNutrient(platform, t, d, r, s, m, p, style);
+    } else {
+      return this.bodyGeneral(platform, t, p, style);
+    }
+  },
+
+  // 抖音选题 → 视频口播/脚本风格
+  bodyDouyin: function(pf, t, d, r, s, m, p){
+    if (pf === 'douyin'){
+      var txt = '📌 开头钩子（前3秒抓住注意力）：\n'
+        + '「' + (d ? d.slice(0, 30) : '今天这条视频可能会颠覆你的认知') + '」\n\n'
+        + '🎯 爆款核心：' + (r || '切中了一个普遍但没人明说的痛点') + '\n\n'
+        + '📋 拍摄/剪辑思路：\n'
+        + (s || '1) 固定一个记忆点（口头禅/动作/转场）\n2) 节奏要快，每3秒给一个信息量\n3) 结尾留钩子引导互动') + '\n\n'
+        + '💡 可复制方法：\n'
+        + (m || '1) 先模仿结构，再填自己的内容\n2) 前5条是练习，第6条开始找感觉\n3) 数据好的方向继续深挖') + '\n\n'
+        + '👇 关注我，每天一条实操干货！';
+      return txt;
+    }
+    // 小红书版的抖音选题
+    return '📌 选题：' + t + '\n\n'
+      + '🔹 背景：' + (d || '这个话题最近热度持续走高') + '\n'
+      + '🔹 为什么能火：' + (r || '精准击中了目标人群的痛点或好奇心') + '\n'
+      + '🔹 内容策略：\n' + (s || '用真实场景+具体数据说话，避免空泛') + '\n'
+      + '🔹 执行要点：\n' + (m || '1) 开头3秒必须有冲突或悬念\n2) 中间给干货/情绪价值\n3) 结尾引导评论或关注') + '\n\n'
+      + '💬 你们觉得这个方向怎么样？评论区告诉我～';
+  },
+
+  // 小红书选题（生活/经验类）→ 笔记风格
+  bodyXhs: function(pf, t, d, r, s, m, p){
+    if (pf === 'xhs'){
+      return '✨ 关于「' + t + '」，分享一些真实感受\n\n'
+        + '📌 起因/背景：\n' + (d || '最近在这个方向上花了不少时间，整理了一些心得') + '\n\n'
+        + '💡 核心发现：\n' + (r || '很多事情看起来复杂，拆解之后其实有迹可循') + '\n\n'
+        + '📝 具体做法：\n' + (s || '1) 先从小目标开始\n2) 记录过程和变化\n3) 定期复盘调整') + '\n\n'
+        + '⚠️ 注意事项：\n' + (m || '不要急于求成，找到适合自己的节奏最重要') + '\n\n'
+        + '希望对正在看这篇笔记的你有一点点帮助 ✨\n有问题评论区聊，看到都会回～';
+    }
+    // 抖音版的小红书选题
+    return '家人们！今天聊聊' + t + '！\n\n'
+      + (d ? '首先说一下背景：' + d + '\n\n' : '')
+      + '我总结了几点关键：\n'
+      + '1️⃣ ' + (r ? r.slice(0, 25) : '找准方向比努力更重要') + '\n'
+      + '2️⃣ ' + (s ? s.slice(0, 25) : '执行过程中注意细节和节奏') + '\n'
+      + '3️⃣ ' + (m ? m.slice(0, 25) : '坚持记录，定期回顾调整') + '\n\n'
+      + '想深入了解的扣"1"，下期出详细版！\n关注我 不迷路 👆';
+  },
+
+  // 成分党选题 → 护肤/成分分析风格（这里护肤模板才合适）
+  bodyNutrient: function(pf, t, d, r, s, m, p, style){
+    if (pf === 'xhs'){
+      var skinBody = '🔬 「' + t + '」成分向深度解析\n\n'
+        + '📌 产品/成分定位：\n' + (d || '这个方向最近讨论度很高，值得认真分析') + '\n\n'
+        + '🔍 为什么有效/热门：\n' + (r || '核心成分机制明确，针对性强，效果可预期') + '\n\n'
+        + '⚙️ 搭配/使用思路：\n' + (s || '1) 了解自身肤质/需求\n2) 从低浓度开始建立耐受\n3) 注意成分间的协同/拮抗') + '\n\n'
+        + '⚠️ 避坑提醒：\n' + (m || '不是所有人都适合，敏感肌先做局部测试\n不要同时叠加太多活性成分\n坚持使用至少28天再判断效果') + '\n\n'
+        + '理性种草，科学护肤 🧪\n有问题评论区交流～';
+      return skinBody;
+    }
+    // 抖音版成分党
+    return '成分党集合！今天盘' + t + '！\n\n'
+      + (d ? '先说结论：' + d + '\n\n' : '')
+      + '🔥 核心成分/原理：\n' + (r || '有效成分+正确用法=看得见的效果') + '\n\n'
+      + '✅ 正确打开方式：\n' + (s || '1) 做好基础保湿打底\n2) 遵循产品建议的使用顺序\n3) 白天防晒不能省') + '\n\n'
+      + '❌ 常见错误：\n' + (m || '跟风堆砌活性成分\n忽视自身肤质差异\n用了两天没效果就换') + '\n\n'
+      + '想看更多成分分析的关注我！\n评论区留下你想了解的成分 🔬';
+  },
+
+  // 通用/手动填写模式（保持原有逻辑）
+  bodyGeneral: function(pf, t, p, style){
+    var pts = p.length ? p : ['核心亮点突出', '实际体验扎实', '性价比不错'];
+    if (pf === 'xhs'){
+      return '🔸 推荐理由：' + t + '是我近期认真研究/使用的。\n'
+        + '🔸 核心亮点：' + pts.slice(0, 3).join('、') + '，整体体验很好。\n'
+        + (style === 'ceping'
+            ? '🔸 实测感受：经过一段时间使用，效果符合预期。\n'
+            : '🔸 使用感受：上手体验超出预期，已经推荐给朋友。\n')
+        + '🔸 适合谁：正在寻找相关方案、不想踩坑的人。\n'
+        + '\n建议结合自身需求判断，不做盲目推荐～\n有用的话收藏起来慢慢看 💡';
+    } else if (pf === 'douyin'){
+      return '今天给你们分享' + t + '！\n\n'
+        + '最打动我的是：' + pts.slice(0, 2).join('、') + '。\n'
+        + '自己用过/研究过之后，觉得确实值得说一说。\n\n'
+        + (style === 'tongdian'
+            ? '之前走过不少弯路，分享出来帮大家避坑。\n'
+            : '纯个人分享，不是广告！\n')
+        + '想了解细节的评论区见！关注我不迷路～';
+    }
+    return t + '｜' + pts.slice(0, 3).join(' · ') + '\n真实体验分享。有问题评论区交流～';
+  },
+
+  // 根据主题类型构建标签
+  buildTags: function(type, kw, t, style){
+    var tagMap = {
+      douyin: {
+        douyin: ['#短视频', '#内容创作', '#爆款逻辑', '#拍摄技巧'],
+        xhs: ['#抖音选题', '#视频脚本', '#创作干货', '#' + (t ? t.replace(/\s/g, '').slice(0, 6) : '')]
+      },
+      xhs: {
+        xhs: ['#小红书', '#经验分享', '#真实记录', '#' + (t ? t.replace(/\s/g, '').slice(0, 6) : '')],
+        douyin: ['#生活记录', '#日常vlog', '#干货分享', '#' + (t ? t.replace(/\s/g, '').slice(0, 6) : '')]
+      },
+      nutrient: {
+        xhs: ['#成分党', '#护肤干货', '#科学护肤', '#' + (kw ? kw.replace(/\s/g, '').slice(0, 6) : '')],
+        douyin: ['#护肤分享', '#成分分析', '#好物测评', '#' + (kw ? kw.replace(/\s/g, '').slice(0, 6) : '')]
+      },
+      general: {
+        xhs: ['#分享', '#干货', '#好物推荐', '#' + (t ? t.replace(/\s/g, '').slice(0, 6) : '')],
+        douyin: ['#分享', '#推荐', '#实用', '#' + (t ? t.replace(/\s/g, '').slice(0, 6) : '')]
+      }
+    };
+    var pool = (tagMap[type] || tagMap.general)[style] || tagMap[type]['xhs'] || tagMap.general['xhs'];
+    return pool.join(' ');
   },
 
   render: function(cards){
@@ -1215,27 +1426,74 @@ var AI = {
     }
   },
 
-  // 从卡片 ✨ AI 按钮触发：用该卡片的关键词自动生成文案
-  genForCard: function(btn, platform, kw){
+  // 从卡片 ✨ AI 按钮触发：自动识别卡片类型，用卡片数据生成对应文案
+  genForCard: function(btn){
     var card = btn.closest('.content-card');
     if (!card) return;
-    // 如果没传 kw，从卡片的搜索关键词中提取
-    if (!kw) {
-      var kwEl = card.querySelector('.kw');
-      kw = kwEl ? kwEl.textContent.replace(/^🔍\s*/, '') : '';
+
+    // 1. 提取卡片数据
+    var titleEl = card.querySelector('h4');
+    var descEl = card.querySelector('p');
+    var analysisEl = card.querySelector('.analysis');
+    var kwEl = card.querySelector('.kw');
+
+    var title = titleEl ? titleEl.textContent.trim() : '';
+    var desc = descEl ? descEl.textContent.trim() : '';
+    var kw = kwEl ? kwEl.textContent.replace(/^🔍\s*/, '').trim() : '';
+
+    // 从 analysis 区域提取结构化数据
+    var reason = '', strategy = '', method = '';
+    if (analysisEl){
+      var texts = analysisEl.innerText.split('\n');
+      for (var i = 0; i < texts.length; i++){
+        if (texts[i].indexOf('爆款原因') !== -1) reason = texts[i].replace(/爆款原因[：:]\s*/, '');
+        else if (texts[i].indexOf('打法策略') !== -1) strategy = texts[i].replace(/打法策略[：:]\s*/, '');
+        else if (texts[i].indexOf('可复制方法') !== -1 || texts[i].indexOf('爆款公式') !== -1) method = texts[i].replace(/可复制方法|爆款公式[：:]\s*/, '');
+      }
     }
-    if (!kw){ alert('未找到选题关键词'); return; }
-    // 生成两套：小红书 + 抖音
+
+    if (!title && !kw){ alert('未找到选题信息'); return; }
+
+    // 2. 判断卡片属于哪个列表 → 决定主题类型
+    var parentList = card.parentElement;
+    var parentId = parentList ? parentList.id : '';
+    var topicType = 'general'; // 默认
+    if (parentId === 'douyin-list') topicType = 'douyin';
+    else if (parentId === 'xhs-list') topicType = 'xhs';
+    else if (parentId === 'nutrient-list') topicType = 'nutrient';
+
+    // 3. 根据类型生成不同组合的文案
     var cards = [];
-    cards.push(this.build(kw, [], 'xhs', 'zhongcao', '小红书种草版'));
-    cards.push(this.build(kw, [], 'douyin', 'zhongcao', '抖音种草版'));
-    cards.push(this.build(kw, [], 'xhs', 'ceping', '小红书测评版'));
-    // 弹出模态框显示结果
-    this.showModal(cards, kw);
+    var cardData = { title: title, desc: desc, reason: reason, strategy: strategy, method: method };
+
+    if (topicType === 'douyin'){
+      // 抖音选题 → 抖音口播脚本 + 小红书拆解笔记
+      cards.push(this.buildForCard(kw || title, 'douyin', 'default', '🎬 抖音口播脚本', topicType, cardData));
+      cards.push(this.buildForCard(kw || title, 'xhs', 'default', '📝 小红书拆解版', topicType, cardData));
+    } else if (topicType === 'xhs'){
+      // 小红书选题 → 小红书笔记 + 抖音口播
+      cards.push(this.buildForCard(kw || title, 'xhs', 'default', '📕 小红书笔记版', topicType, cardData));
+      cards.push(this.buildForCard(kw || title, 'douyin', 'default', '🎬 抖音口播版', topicType, cardData));
+    } else if (topicType === 'nutrient'){
+      // 成分党 → 成分分析(小红书) + 测种草(小红书) + 抖音科普
+      cards.push(this.buildForCard(kw || title, 'xhs', 'default', '🧪 成分解析版', topicType, cardData));
+      cards.push(this.buildForCard(kw || title, 'xhs', 'ceping', '📊 测评种草版', topicType, cardData));
+      cards.push(this.buildForCard(kw || title, 'douyin', 'default', '🎬 抖音科普版', topicType, cardData));
+    } else {
+      cards.push(this.buildForCard(kw || title, 'xhs', 'default', '📕 小红书版', topicType, cardData));
+      cards.push(this.buildForCard(kw || title, 'douyin', 'default', '🎬 抖音版', topicType, cardData));
+    }
+
+    // 4. 弹出模态框
+    this.showModal(cards, kw || title);
+  },
+
+  // 为卡片生成单条文案（封装 buildForTopic）
+  buildForCard: function(topic, platform, style, label, topicType, cardData){
+    return this.buildForTopic(topic, [], platform, style, label, topicType, cardData);
   },
 
   showModal: function(cards, topic){
-    // 复用或创建模态框
     var modal = document.getElementById('ai-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -1263,7 +1521,7 @@ var AI = {
         + '<textarea style="position:absolute;left:-9999px" readonly>' + this.esc(full) + '</textarea>'
         + '</div>';
     }
-    html += '<div style="font-size:11px;color:#aaa;text-align:center;margin-top:4px">本地模板生成 · 无需联网 · 可直接复制发布</div></div>';
+    html += '<div style="font-size:11px;color:#aaa;text-align:center;margin-top:4px">基于选题内容智能生成 · 无需联网 · 可直接复制发布</div></div>';
     modal.innerHTML = html;
     modal.style.display = 'flex';
   },
